@@ -27,7 +27,6 @@ export function EmployeePerformancePage() {
 
   const [showReviewModal, setShowReviewModal] = useState<string | null>(null);
 
-  const completedGoals = goals.filter(g => g.status === 'Completed').length;
 
   const getStatusBadge = (status: string) => {
     switch (status) {

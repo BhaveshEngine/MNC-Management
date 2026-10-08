@@ -119,7 +119,7 @@ export function EmployeePayrollPage() {
             {/* Center Text */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               <span className="text-[12px] text-gray-500 font-medium uppercase">Gross Salary</span>
-              <span className="text-[20px] font-bold text-gray-900">₹65,000</span>
+              <span className="text-[20px] font-bold text-gray-900">₹{salaryStructure.gross.toLocaleString('en-IN')}</span>
             </div>
           </div>
 
