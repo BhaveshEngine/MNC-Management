@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MNC Record Management System</title>
+  <meta name="description" content="Secure employee record and attendance management dashboard for MNC organizations." />
+
+  <!-- Google Fonts: Inter + JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Bootstrap 5 CSS (utilities + grid) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Tailwind Config -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            mnc: {
+              bg: '#0a0e1a',
+              surface: '#0f1629',
+              card: '#111a33',
+              cardHover: '#162044',
+              border: 'rgba(99,102,241,0.15)',
+              borderHover: 'rgba(99,102,241,0.35)',
+              accent: '#818cf8',
+              accentBright: '#a5b4fc',
+              accentDim: '#6366f1',
+              success: '#34d399',
+              warning: '#fbbf24',
+              danger: '#f87171',
+              info: '#38bdf8',
+              text: '#e8eaf6',
+              sub: '#94a3b8',
+              muted: '#64748b',
+            }
+          },
+          boxShadow: {
+            'glow': '0 0 30px rgba(99,102,241,0.15)',
+            'glow-lg': '0 0 60px rgba(99,102,241,0.25)',
+            'card': '0 8px 32px rgba(0,0,0,0.4)',
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* ── Override Bootstrap where needed ── */
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif !important;
+      background: #0a0e1a !important;
+      color: #e8eaf6 !important;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated background mesh */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 80% 60% at 10% 20%, rgba(99,102,241,0.07), transparent 50%),
+        radial-gradient(ellipse 60% 80% at 90% 80%, rgba(139,92,246,0.05), transparent 50%),
+        radial-gradient(ellipse 50% 50% at 50% 50%, rgba(59,130,246,0.03), transparent 60%);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.3); border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,0.5); }
+    ::selection { background: #6366f1; color: #fff; }
+
+    /* ── Glass Card ── */
+    .glass {
+      background: rgba(15,22,41,0.7);
+      backdrop-filter: blur(24px) saturate(1.4);
+      -webkit-backdrop-filter: blur(24px) saturate(1.4);
+      border: 1px solid rgba(99,102,241,0.15);
+    }
+    .glass-hover:hover {
+      border-color: rgba(99,102,241,0.35);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 30px rgba(99,102,241,0.15);
+    }
+
+    /* ── Gradient Text ── */
+    .gradient-text {
+      background: linear-gradient(135deg, #a5b4fc, #818cf8, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ── Accent Bar ── */
+    .accent-bar { position: relative; }
+    .accent-bar::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 4px;
+      height: 22px;
+      background: linear-gradient(180deg, #818cf8, #6366f1);
+      border-radius: 9999px;
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.92); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.8); opacity: 1; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    .animate-fade-up    { animation: fadeUp 0.5s cubic-bezier(0.4,0,0.2,1) both; }
+    .animate-fade-in    { animation: fadeIn 0.4s ease both; }
+    .animate-scale-in   { animation: scaleIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both; }
+    .animate-float      { animation: float 3s ease-in-out infinite; }
+
+    .delay-1 { animation-delay: 0.08s; }
+    .delay-2 { animation-delay: 0.16s; }
+    .delay-3 { animation-delay: 0.24s; }
+    .delay-4 { animation-delay: 0.32s; }
+
+    /* ── Toast ── */
+    .toast-stack {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .toast-item {
+      pointer-events: auto;
+      animation: fadeUp 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    .toast-item.out {
+      animation: fadeOut 0.25s ease both;
+    }
+    @keyframes fadeOut {
+      to { opacity: 0; transform: translateX(30px); }
+    }
+
+    /* ── Badge Dot ── */
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+
+    /* ── Stat card top bar colors ── */
+    .stat-bar { height: 3px; border-radius: 9999px 9999px 0 0; }
+
+    /* ── Row animation ── */
+    .row-animate {
+      animation: fadeUp 0.3s ease both;
+    }
+
+    /* ── Focus styles ── */
+    input:focus, select:focus, textarea:focus {
+      outline: none !important;
+      border-color: #818cf8 !important;
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.25) !important;
+    }
+
+    /* ── Bootstrap override for dark inputs ── */
+    .form-control, .form-select {
+      background-color: rgba(10,14,26,0.8) !important;
+      border-color: rgba(255,255,255,0.06) !important;
+      color: #e8eaf6 !important;
+      font-family: 'Inter', sans-serif !important;
+      font-size: 14px !important;
+      border-radius: 12px !important;
+      padding: 10px 16px !important;
+      transition: border-color 0.15s, box-shadow 0.15s !important;
+    }
+    .form-control::placeholder { color: #64748b !important; }
+    .form-control:hover, .form-select:hover {
+      border-color: rgba(99,102,241,0.35) !important;
+    }
+
+    /* ── Hide default ── */
+    .d-hidden { display: none !important; }
+
+    /* ── Pulse ring for online dot ── */
+    .online-ring {
+      position: absolute;
+      inset: -3px;
+      border: 2px solid #34d399;
+      border-radius: 9999px;
+      animation: pulse-ring 2s ease-out infinite;
+    }
+
+    /* ── Chart container ── */
+    .chart-box {
+      position: relative;
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body class="text-mnc-text font-sans antialiased">
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-stack"></div>
+
+  <div class="relative z-10 max-w-[1440px] mx-auto px-4 md:px-6 lg:px-8 py-6 min-h-screen">
+
+    <!-- ╔═══════════════════════════════════════╗ -->
+    <!-- ║        LOGIN SECTION                  ║ -->
+    <!-- ╚═══════════════════════════════════════╝ -->
+    <section id="loginSection" class="flex items-center justify-center min-h-[calc(100vh-48px)]">
+      <div class="w-full max-w-md animate-fade-up">
+
+        <!-- Brand -->
+        <div class="text-center mb-8">
+          <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-mnc-card border border-mnc-border mb-5 shadow-glow animate-float">
+            <i data-lucide="building-2" class="w-8 h-8 text-mnc-accent"></i>
+          </div>
+          <h1 class="text-3xl font-extrabold gradient-text tracking-tight mb-2">MNC Record System</h1>
+          <p class="text-sm text-mnc-sub">Secure employee record access for admin and user roles.</p>
+        </div>
+
+        <!-- Login Card -->
+        <form id="loginForm" class="glass rounded-2xl p-8 space-y-5 shadow-card shadow-glow transition-all duration-300 hover:shadow-glow-lg">
+
+          <!-- Username -->
+          <div>
+            <label class="block text-xs font-semibold text-mnc-sub uppercase tracking-wider mb-2">Username</label>
+            <div class="relative">
+              <i data-lucide="user" class="w-4 h-4 text-mnc-muted absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+              <input type="text" id="username" placeholder="Enter username" required
+                class="form-control !pl-11" />
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div>
+            <label class="block text-xs font-semibold text-mnc-sub uppercase tracking-wider mb-2">Password</label>
+            <div class="relative">
+              <i data-lucide="lock" class="w-4 h-4 text-mnc-muted absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+              <input type="password" id="password" placeholder="Enter password" required
+                class="form-control !pl-11" />
+            </div>
+          </div>
+
+          <p id="loginMessage" class="text-center text-sm min-h-[20px] font-medium"></p>
+
+          <button type="submit" id="loginBtn"
+            class="w-full py-3 rounded-xl font-bold text-white text-sm
+                   bg-gradient-to-r from-mnc-accentDim to-mnc-accent
+                   shadow-lg shadow-mnc-accentDim/30
+                   hover:shadow-xl hover:shadow-mnc-accentDim/40 hover:-translate-y-0.5
+                   active:translate-y-0 active:scale-[0.98]
+                   transition-all duration-200 flex items-center justify-center gap-2">
+            <i data-lucide="log-in" class="w-4 h-4"></i>
+            Sign In
+          </button>
+        </form>
+
+        <!-- Demo Credentials -->
+        <div class="glass rounded-xl p-4 mt-5 animate-fade-up delay-2">
+          <p class="text-[11px] font-bold text-mnc-muted uppercase tracking-widest mb-2">Demo Credentials</p>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="flex items-center gap-2 text-xs">
+              <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-mnc-accentDim/20 text-mnc-accentBright border border-mnc-accentDim/30">Admin</span>
+              <code class="font-mono text-mnc-sub text-[12px]">admin / admin123</code>
+            </div>
+            <div class="flex items-center gap-2 text-xs">
+              <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-mnc-info/20 text-mnc-info border border-mnc-info/30">User</span>
+              <code class="font-mono text-mnc-sub text-[12px]">user / user123</code>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ╔═══════════════════════════════════════╗ -->
+    <!-- ║        DASHBOARD SECTION              ║ -->
+    <!-- ╚═══════════════════════════════════════╝ -->
+    <section id="dashboardSection" class="d-hidden space-y-6">
+
+      <!-- Top Bar -->
+      <header class="glass rounded-2xl px-6 py-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-card animate-fade-up">
+        <div class="flex items-center gap-4">
+          <!-- Avatar -->
+          <div class="relative">
+            <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-mnc-accentDim to-mnc-accent flex items-center justify-center text-white font-bold text-sm shadow-glow">
+              <i data-lucide="user-circle" class="w-6 h-6"></i>
+            </div>
+            <div class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-mnc-success rounded-full border-2 border-mnc-card">
+              <span class="online-ring"></span>
+            </div>
+          </div>
+          <div>
+            <h2 class="text-xl font-extrabold gradient-text tracking-tight">Employee Dashboard</h2>
+            <p id="welcomeText" class="text-xs text-mnc-sub mt-0.5">Welcome</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="roleBadge" class="hidden"></span>
+          <button id="logoutBtn"
+            class="px-5 py-2.5 rounded-xl text-xs font-semibold
+                   bg-mnc-card border border-mnc-border text-mnc-accentBright
+                   hover:bg-mnc-cardHover hover:border-mnc-borderHover
+                   transition-all duration-200 flex items-center gap-2 shadow-none">
+            <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+            Logout
+          </button>
+        </div>
+      </header>
+
+      <!-- Stats Cards -->
+      <div id="statsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-up delay-1">
+        <!-- Filled dynamically -->
+      </div>
+
+      <!-- Tab Navigation -->
+      <nav class="flex items-center gap-1 glass rounded-xl p-1.5 w-fit animate-fade-up delay-2">
+        <button class="tab-btn active px-5 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200" data-tab="recordsTab">
+          <i data-lucide="database" class="w-3.5 h-3.5 inline mr-1.5 -mt-0.5"></i>Records
+        </button>
+        <button id="attendanceTabButton" class="tab-btn px-5 py-2.5 rounded-lg text-xs font-semibold text-mnc-muted hover:text-mnc-text hover:bg-white/5 transition-all duration-200" data-tab="attendanceTab" data-admin-only>
+          <i data-lucide="calendar-check" class="w-3.5 h-3.5 inline mr-1.5 -mt-0.5"></i>Attendance
+        </button>
+        <button class="tab-btn px-5 py-2.5 rounded-lg text-xs font-semibold text-mnc-muted hover:text-mnc-text hover:bg-white/5 transition-all duration-200" data-tab="analyticsTab">
+          <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 inline mr-1.5 -mt-0.5"></i>Analytics
+        </button>
+      </nav>
+
+
+      <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+      <!-- TAB: Records                         -->
+      <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+      <section id="recordsTab" class="tab-panel active animate-fade-up delay-3">
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+
+          <!-- Left: Add / Update Form -->
+          <div class="xl:col-span-4">
+            <div class="glass glass-hover rounded-2xl p-6 shadow-card transition-all duration-300 sticky top-6">
+              <h3 class="accent-bar pl-5 text-base font-bold text-mnc-text mb-6">Add / Update Employee</h3>
+
+              <form id="recordForm" class="space-y-4">
+                <input type="hidden" id="recordId" />
+
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[11px] font-semibold text-mnc-muted uppercase tracking-wider mb-1.5">Employee ID</label>
+                    <input type="text" id="employeeId" required class="form-control" placeholder="EMP-001" />
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-semibold text-mnc-muted uppercase tracking-wider mb-1.5">Age</label>
+                    <input type="number" id="age" min="18" required class="form-control" placeholder="25" />
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-semibold text-mnc-muted uppercase tracking-wider mb-1.5">Full Name</label>
+                  <input type="text" id="name" required class="form-control" placeholder="John Doe" />
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[11px] font-semibold text-mnc-muted uppercase tracking-wider mb-1.5">Department</label>
+                    <input type="text" id="department" required class="form-control" placeholder="Engineering" />
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-semibold text-mnc-muted uppercase tracking-wider mb-1.5">Salary</label>
+                    <input type="number" id="salary" min="0" required class="form-control" placeholder="50000" />
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-semibold text-mnc-muted uppercase tracking-wider mb-1.5">Contact No</label>
+                  <input type="tel" id="contactNo" required class="form-control" placeholder="+91 98765 43210" />
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-semibold text-mnc-muted uppercase tracking-wider mb-1.5">Address</label>
+                  <textarea id="address" required class="form-control" rows="2" placeholder="City, State"></textarea>
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                  <button type="submit" id="saveBtn"
+                    class="flex-1 py-3 rounded-xl text-sm font-bold text-white
+                           bg-gradient-to-r from-mnc-accentDim to-mnc-accent
+                           shadow-lg shadow-mnc-accentDim/30
+                           hover:shadow-xl hover:-translate-y-0.5
+                           active:translate-y-0 active:scale-[0.98]
+                           transition-all duration-200 flex items-center justify-center gap-2">
+                    <i data-lucide="save" class="w-4 h-4"></i>
+                    Save Record
+                  </button>
+                  <button type="button" id="resetBtn"
+                    class="px-5 py-3 rounded-xl text-sm font-semibold
+                           bg-mnc-card border border-mnc-border text-mnc-sub
+                           hover:bg-mnc-cardHover hover:text-mnc-text hover:border-mnc-borderHover
+                           transition-all duration-200 shadow-none">
+                    Clear
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Right: Records Table -->
+          <div class="xl:col-span-8">
+            <div class="glass glass-hover rounded-2xl p-6 shadow-card transition-all duration-300">
+              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-5">
+                <h3 class="accent-bar pl-5 text-base font-bold text-mnc-text">Employee Records</h3>
+                <div class="relative w-full sm:w-72">
+                  <i data-lucide="search" class="w-4 h-4 text-mnc-muted absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                  <input type="text" id="searchInput" placeholder="Search by name, dept, ID..."
+                    class="form-control !pl-10 !py-2.5 !text-xs" />
+                </div>
+              </div>
+
+              <div class="overflow-x-auto rounded-xl border border-white/[0.04] bg-mnc-bg/40">
+                <table class="w-full border-collapse text-left">
+                  <thead>
+                    <tr class="bg-mnc-surface border-b border-mnc-border">
+                      <th class="py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-mnc-accentBright whitespace-nowrap">Emp ID</th>
+                      <th class="py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-mnc-accentBright whitespace-nowrap">Name</th>
+                      <th class="py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-mnc-accentBright whitespace-nowrap">Dept</th>
+                      <th class="py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-mnc-accentBright whitespace-nowrap">Salary</th>
+                      <th class="py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-mnc-accentBright whitespace-nowrap">Contact</th>
+                      <th class="py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-mnc-accentBright whitespace-nowrap">Address</th>
+                      <th class="py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-mnc-accentBright whitespace-nowrap text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recordsTableBody" class="divide-y divide-white/[0.04] text-sm"></tbody>
+                </table>
+              </div>
+              <div id="emptyRecords" class="d-hidden py-12 text-center">
+                <i data-lucide="inbox" class="w-10 h-10 text-mnc-muted mx-auto mb-3 opacity-40"></i>
+                <p class="text-sm text-mnc-muted">No employee records found.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+      <!-- TAB: Attendance                      -->
+      <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+      <section id="attendanceTab" class="tab-panel d-hidden animate-fade-up">
+        <div class="glass glass-hover rounded-2xl p-6 shadow-card transition-all duration-300">
+          <h3 class="accent-bar pl-5 text-base font-bold text-mnc-text mb-6">Attendance Management</h3>
+
+          <div class="flex flex-wrap items-end gap-4 mb-6 p-4 rounded-xl bg-mnc-surface/50 border border-white/[0.04]" data-admin-only>
+            <div class="flex-1 min-w-[200px]">
+              <label class="block text-[11px] font-semibold text-mnc-muted uppercase tracking-wider mb-1.5">Employee</label>
+              <select id="attendanceEmployeeSelect" class="form-select"></select>
+            </div>
+            <div class="w-40">
+              <label class="block text-[11px] font-semibold text-mnc-muted uppercase tracking-wider mb-1.5">Status</label>
+              <select id="attendanceStatusSelect" class="form-select">
+                <option value="Present">✅ Present</option>
+                <option value="Absent">❌ Absent</option>
+                <option value="Late">⚠️ Late</option>
+              </select>
+            </div>
+            <button id="markAttendanceBtn"
+              class="px-6 py-2.5 rounded-xl text-sm font-bold text-white
+                     bg-gradient-to-r from-mnc-accentDim to-mnc-accent
+                     shadow-lg shadow-mnc-accentDim/30
+                     hover:shadow-xl hover:-translate-y-0.5
+                     active:translate-y-0 active:scale-[0.98]
+                     transition-all duration-200 flex items-center gap-2 whitespace-nowrap h-[44px]">
+              <i data-lucide="check-circle" class="w-4 h-4"></i>
+              Mark Attendance
+            </button>
+          </div>
+
+          <div class="overflow-x-auto rounded-xl border border-white/[0.04] bg-mnc-bg/40">
+            <table class="w-full border-collapse text-left">
+              <thead>
+                <tr class="bg-mnc-surface border-b border-mnc-border">
+                  <th class="py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-mnc-accentBright whitespace-nowrap">Emp ID</th>
+                  <th class="py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-mnc-accentBright whitespace-nowrap">Name</th>
+                  <th class="py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-mnc-accentBright whitespace-nowrap">Status</th>
+                  <th class="py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-mnc-accentBright whitespace-nowrap">Date & Time</th>
+                </tr>
+              </thead>
+              <tbody id="attendanceTableBody" class="divide-y divide-white/[0.04] text-sm"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+      <!-- TAB: Analytics                       -->
+      <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+      <section id="analyticsTab" class="tab-panel d-hidden animate-fade-up">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Department Distribution -->
+          <div class="glass glass-hover rounded-2xl p-6 shadow-card transition-all duration-300">
+            <h3 class="accent-bar pl-5 text-base font-bold text-mnc-text mb-6">Department Distribution</h3>
+            <div class="chart-box" style="height: 280px;">
+              <canvas id="deptChart"></canvas>
+            </div>
+          </div>
+          <!-- Salary Overview -->
+          <div class="glass glass-hover rounded-2xl p-6 shadow-card transition-all duration-300">
+            <h3 class="accent-bar pl-5 text-base font-bold text-mnc-text mb-6">Salary Overview</h3>
+            <div class="chart-box" style="height: 280px;">
+              <canvas id="salaryChart"></canvas>
+            </div>
+          </div>
+          <!-- Attendance Overview -->
+          <div class="glass glass-hover rounded-2xl p-6 shadow-card transition-all duration-300">
+            <h3 class="accent-bar pl-5 text-base font-bold text-mnc-text mb-6">Attendance Overview</h3>
+            <div class="chart-box" style="height: 280px;">
+              <canvas id="attendanceChart"></canvas>
+            </div>
+          </div>
+          <!-- Age Distribution -->
+          <div class="glass glass-hover rounded-2xl p-6 shadow-card transition-all duration-300">
+            <h3 class="accent-bar pl-5 text-base font-bold text-mnc-text mb-6">Age Distribution</h3>
+            <div class="chart-box" style="height: 280px;">
+              <canvas id="ageChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </section>
+  </div>
+
+  <!-- Bootstrap JS (for tooltips etc.) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

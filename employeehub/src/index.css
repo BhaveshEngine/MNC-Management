@@ -1,0 +1,272 @@
+@import "tailwindcss";
+
+/* ══════════════════════════════════════════════
+   EMPLOYEEHUB — DESIGN SYSTEM
+   Enterprise HRMS · Professional SaaS
+   ══════════════════════════════════════════════ */
+
+@theme {
+  /* ── Primary Blue ── */
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-200: #bfdbfe;
+  --color-brand-300: #93c5fd;
+  --color-brand-400: #60a5fa;
+  --color-brand-500: #3b82f6;
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1d4ed8;
+
+  /* ── Sidebar Navy ── */
+  --color-navy-900: #0f1225;
+  --color-navy-800: #151937;
+  --color-navy-700: #1c2147;
+  --color-navy-600: #252c5a;
+  --color-navy-500: #364073;
+  --color-navy-400: #4a5590;
+  --color-navy-300: #7681ad;
+
+  /* ── Neutrals ── */
+  --color-gray-25: #fcfcfd;
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  --color-gray-950: #030712;
+
+  /* ── Semantic ── */
+  --color-success-50: #f0fdf4;
+  --color-success-100: #dcfce7;
+  --color-success-500: #22c55e;
+  --color-success-600: #16a34a;
+  --color-success-700: #15803d;
+
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+
+  --color-danger-50: #fef2f2;
+  --color-danger-100: #fee2e2;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+  --color-danger-700: #b91c1c;
+
+  --color-info-50: #eff6ff;
+  --color-info-100: #dbeafe;
+  --color-info-500: #3b82f6;
+  --color-info-600: #2563eb;
+
+  /* ── Typography ── */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+
+  /* ── Radius ── */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+
+  /* ── Shadows ── */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.06), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+}
+
+@layer base {
+  /* ── Base Reset ── */
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: #F5F8FF;
+    color: var(--color-gray-900);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background: var(--color-brand-100);
+    color: var(--color-brand-900, #1e3a8a);
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--color-gray-300); border-radius: 100px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-gray-400); }
+
+  /* Dark sidebar scrollbar */
+  .sidebar-scroll::-webkit-scrollbar-thumb { background: var(--color-navy-500); }
+  .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: var(--color-navy-400); }
+
+  /* ── Focus ── */
+  :focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+  }
+
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 1px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* ── Input Base ── */
+  input, select, textarea {
+    font-family: inherit;
+    font-size: inherit;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="number"],
+  input[type="date"],
+  select,
+  textarea {
+    height: 36px;
+    padding: 0 12px;
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-md);
+    background: white;
+    color: var(--color-gray-900);
+    font-size: 13px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--color-brand-500);
+    box-shadow: 0 0 0 3px var(--color-brand-100);
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: var(--color-gray-400);
+  }
+
+  textarea {
+    height: auto;
+    padding: 8px 12px;
+    min-height: 80px;
+    resize: vertical;
+  }
+
+  /* ── Table Base ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th {
+    text-align: left;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-gray-500);
+    padding: 10px 16px;
+    background: var(--color-gray-50);
+    border-bottom: 1px solid var(--color-gray-200);
+    white-space: nowrap;
+    user-select: none;
+  }
+
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-gray-100);
+    font-size: 13px;
+    color: var(--color-gray-700);
+    vertical-align: middle;
+  }
+
+  tbody tr {
+    transition: background-color 0.1s;
+  }
+
+  tbody tr:hover {
+    background-color: var(--color-gray-25);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+/* ── Animations ── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+@layer utilities {
+  .animate-fade { animation: fadeIn 0.2s ease-out; }
+  .animate-slide-up { animation: slideUp 0.2s ease-out; }
+  .animate-slide-down { animation: slideDown 0.15s ease-out; }
+  .animate-scale { animation: scaleIn 0.15s ease-out; }
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+.animate-slide-in-right { animation: slideInRight 0.25s ease-out; }
+
+  /* Skeleton loader */
+  .skeleton {
+    background: linear-gradient(90deg, var(--color-gray-100) 25%, var(--color-gray-50) 50%, var(--color-gray-100) 75%);
+    background-size: 800px 100%;
+    animation: shimmer 1.5s infinite linear;
+    border-radius: var(--radius-sm);
+  }
+
+  /* ── Utility: Line Clamp ── */
+  .line-clamp-1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .line-clamp-2 { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+}

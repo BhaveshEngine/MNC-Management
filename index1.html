@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Premium Nautical Gold - Trading Journal</title>
+  
+  <!-- Inter & Playfair Display Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+            serif: ['Playfair Display', 'serif'],
+          },
+          colors: {
+            brand: {
+              bg: '#161515',
+              surface: '#1E1C1A',
+              card: '#25221F',
+              cardHover: '#2E2B27',
+              border: '#3A322A',
+              borderHover: '#54483D',
+              gold: '#D4AF37',
+              goldLight: '#FFDF73',
+              goldHover: '#B3912B',
+              copper: '#C05A3C', // Loss
+              bronze: '#A37C5B', // Mixed
+              text: '#EAE6DF',
+              subtext: '#8C837A',
+            }
+          },
+          boxShadow: {
+            'glow-gold': '0 0 15px rgba(212, 175, 55, 0.25)',
+            'glow-copper': '0 0 15px rgba(192, 90, 60, 0.25)',
+            'subtle': '0 4px 20px -2px rgba(0, 0, 0, 0.6)'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Compass Watermark Background */
+    body {
+      background-color: #161515;
+      background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4af37' fill-opacity='0.03'%3E%3Cpath d='M60 0L64 56L120 60L64 64L60 120L56 64L0 60L56 56z'/%3E%3Ccircle cx='60' cy='60' r='40' stroke='%23d4af37' stroke-width='1' fill='none'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      background-attachment: fixed;
+    }
+
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #161515;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #3A322A;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #A37C5B;
+    }
+    
+    /* Input Highlights */
+    input:focus, select:focus, textarea:focus {
+      border-color: #D4AF37 !important;
+      outline: none !important;
+      box-shadow: 0 0 0 1px #D4AF37 !important;
+    }
+
+    /* 3D Spheres for Calendar */
+    .win-sphere {
+      background: radial-gradient(circle at 30% 30%, #FFDF73, #D4AF37 40%, #8A6D19 80%);
+      box-shadow: 0 3px 5px rgba(0,0,0,0.6), inset 0 -2px 3px rgba(0,0,0,0.4);
+    }
+    .loss-sphere {
+      background: radial-gradient(circle at 30% 30%, #E88365, #C05A3C 40%, #7A3521 80%);
+      box-shadow: 0 3px 5px rgba(0,0,0,0.6), inset 0 -2px 3px rgba(0,0,0,0.4);
+    }
+    .mixed-sphere {
+      background: radial-gradient(circle at 30% 30%, #C9A485, #A37C5B 40%, #5E4631 80%);
+      box-shadow: 0 3px 5px rgba(0,0,0,0.6), inset 0 -2px 3px rgba(0,0,0,0.4);
+    }
+
+    /* Selected Calendar Day */
+    .calendar-cell.selected {
+      background-color: #121110 !important;
+      border: 3px double #D4AF37 !important;
+      box-shadow: inset 0 0 15px rgba(0,0,0,0.9), 0 0 20px rgba(212,175,55,0.3) !important;
+    }
+
+    /* Avatar Mesh Texture */
+    .avatar-mesh {
+      background: radial-gradient(circle at center, #25221F 0%, #161515 100%);
+      background-image: repeating-linear-gradient(45deg, #3A322A 25%, transparent 25%, transparent 75%, #3A322A 75%, #3A322A), repeating-linear-gradient(45deg, #3A322A 25%, #161515 25%, #161515 75%, #3A322A 75%, #3A322A);
+      background-position: 0 0, 2px 2px;
+      background-size: 4px 4px;
+    }
+
+    /* Mechanical Chart Rings */
+    .nautical-rings {
+      border-radius: 50%;
+      border: 6px double #3A322A;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.7), 0 0 20px rgba(212,175,55,0.15);
+      background: radial-gradient(circle at center, #1E1C1A 0%, #161515 100%);
+    }
+
+    /* Card Gradient Overlays */
+    .card-glow {
+      background: radial-gradient(circle at top right, rgba(212,175,55,0.03), transparent 60%), #25221F;
+    }
+
+    .pulse-gold {
+      animation: pulseGlowGold 2s infinite;
+    }
+    @keyframes pulseGlowGold {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.15); }
+    }
+  </style>
+</head>
+
+<body class="text-brand-text font-sans antialiased min-h-screen flex selection:bg-brand-gold selection:text-black">
+
+  <!-- Left Navigation Sidebar -->
+  <aside class="w-64 flex-shrink-0 bg-brand-surface border-r border-brand-border flex flex-col justify-between h-screen sticky top-0 z-30 select-none">
+    <div class="p-4 flex flex-col h-full overflow-y-auto">
+      
+      <!-- User Profile Header -->
+      <div class="flex items-center gap-3 p-2.5 rounded-xl bg-brand-card border border-brand-border mb-4 shadow-subtle">
+        <div class="relative">
+          <div class="w-10 h-10 rounded-full avatar-mesh border-2 border-brand-border flex items-center justify-center font-serif text-brand-gold shadow-glow-gold">
+            <span class="text-sm font-semibold tracking-wider">BJ</span>
+          </div>
+          <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-brand-gold border-2 border-brand-card rounded-full pulse-gold"></span>
+        </div>
+        <div class="overflow-hidden">
+          <div class="flex items-center gap-1.5">
+            <h1 class="text-sm font-bold font-serif tracking-tight text-white truncate">Bhavesh</h1>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-gradient-to-b from-brand-goldLight to-brand-gold text-black border border-brand-gold shadow-glow-gold font-mono font-bold">PRO</span>
+          </div>
+          <p class="text-xs text-brand-subtext truncate font-serif italic">Set & Forget</p>
+        </div>
+      </div>
+
+      <!-- Quick Search Bar -->
+      <div class="relative mb-5">
+        <i data-lucide="search" class="w-4 h-4 text-brand-subtext absolute left-3 top-1/2 -translate-y-1/2"></i>
+        <input 
+          id="globalSearchInput"
+          type="text" 
+          placeholder="Search trades... (Cmd+K)" 
+          class="w-full bg-brand-card border border-brand-border rounded-lg pl-9 pr-3 py-2 text-xs text-brand-text placeholder-brand-subtext focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold transition-colors"
+          oninput="handleGlobalSearch(this.value)"
+        >
+      </div>
+
+      <!-- Navigation Menus -->
+      <nav class="space-y-6 flex-1">
+        <!-- OVERVIEW SECTION -->
+        <div>
+          <span class="text-[10px] font-bold text-brand-subtext tracking-widest uppercase px-2 mb-2 block font-serif">Overview</span>
+          <ul class="space-y-1">
+            <li>
+              <button onclick="switchView('dashboard')" id="nav-dashboard" class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-brand-gold bg-brand-card border-l-2 border-brand-gold transition-all">
+                <div class="flex items-center gap-2.5">
+                  <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                  <span>Dashboard</span>
+                </div>
+                <span class="w-1.5 h-1.5 rounded-full bg-brand-gold shadow-glow-gold"></span>
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <!-- JOURNAL SECTION -->
+        <div>
+          <span class="text-[10px] font-bold text-brand-subtext tracking-widest uppercase px-2 mb-2 block font-serif">Journal</span>
+          <ul class="space-y-1">
+            <li>
+              <button onclick="switchView('backtesting')" id="nav-backtesting" class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-brand-subtext hover:text-brand-text hover:bg-brand-card transition-all">
+                <div class="flex items-center gap-2.5">
+                  <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                  <span>Backtesting</span>
+                </div>
+                <span id="badge-backtest-count" class="px-1.5 py-0.5 rounded text-[10px] bg-brand-card border border-brand-border text-brand-gold font-mono">16</span>
+              </button>
+            </li>
+            <li>
+              <button onclick="switchView('live')" id="nav-live" class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-brand-subtext hover:text-brand-text hover:bg-brand-card transition-all">
+                <div class="flex items-center gap-2.5">
+                  <i data-lucide="radio" class="w-4 h-4"></i>
+                  <span>Live Trades</span>
+                </div>
+                <span id="badge-live-count" class="px-1.5 py-0.5 rounded text-[10px] bg-brand-card border border-brand-border text-brand-goldLight font-mono">8</span>
+              </button>
+            </li>
+            <li>
+              <button onclick="switchView('notes')" id="nav-notes" class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-brand-subtext hover:text-brand-text hover:bg-brand-card transition-all">
+                <div class="flex items-center gap-2.5">
+                  <i data-lucide="sticky-note" class="w-4 h-4"></i>
+                  <span>Notes & Ideas</span>
+                </div>
+                <span class="w-2 h-2 rounded-full bg-brand-border"></span>
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <!-- REVIEW SECTION -->
+        <div>
+          <span class="text-[10px] font-bold text-brand-subtext tracking-widest uppercase px-2 mb-2 block font-serif">Review</span>
+          <ul class="space-y-1">
+            <li>
+              <button onclick="switchView('tradelog')" id="nav-tradelog" class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-brand-subtext hover:text-brand-text hover:bg-brand-card transition-all">
+                <div class="flex items-center gap-2.5">
+                  <i data-lucide="table" class="w-4 h-4"></i>
+                  <span>Trade Log</span>
+                </div>
+                <span id="badge-total-trades" class="px-1.5 py-0.5 rounded text-[10px] bg-brand-card border border-brand-border text-brand-text font-mono">24</span>
+              </button>
+            </li>
+            <li>
+              <button onclick="switchView('analysis')" id="nav-analysis" class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-brand-subtext hover:text-brand-text hover:bg-brand-card transition-all">
+                <div class="flex items-center gap-2.5">
+                  <i data-lucide="trending-up" class="w-4 h-4"></i>
+                  <span>Analysis</span>
+                </div>
+                <span class="px-1.5 py-0.5 rounded text-[10px] bg-brand-copper/20 text-brand-copper font-mono">NEW</span>
+              </button>
+            </li>
+            <li>
+              <button onclick="switchView('rules')" id="nav-rules" class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-brand-subtext hover:text-brand-text hover:bg-brand-card transition-all">
+                <div class="flex items-center gap-2.5">
+                  <i data-lucide="shield-check" class="w-4 h-4"></i>
+                  <span>Execution Rules</span>
+                </div>
+                <span class="text-[10px] text-brand-gold font-mono">96%</span>
+              </button>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <!-- Account Metrics Summary Footer -->
+      <div class="mt-4 pt-3 border-t border-brand-border">
+        <div class="p-3 bg-brand-card card-glow rounded-xl border border-brand-border">
+          <div class="flex justify-between items-center mb-1.5">
+            <span class="text-[11px] text-brand-subtext font-serif">Total Equity</span>
+            <span class="text-[10px] font-mono font-bold text-brand-gold">+$6,420</span>
+          </div>
+          <div class="text-base font-bold font-mono tracking-tight text-white mb-2">$106,420.00</div>
+          <div class="w-full bg-brand-border h-1.5 rounded-full overflow-hidden shadow-inner">
+            <div class="bg-gradient-to-r from-brand-bronze to-brand-gold h-full rounded-full" style="width: 76%"></div>
+          </div>
+          <div class="flex justify-between items-center text-[10px] text-brand-subtext mt-2 font-mono">
+            <span>PF: 2.45</span>
+            <span>Avg 1:2.6R</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content View Area -->
+  <main class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+    
+    <!-- Top Header Bar -->
+    <header class="h-16 px-8 border-b border-brand-border bg-brand-bg/80 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between">
+      
+      <!-- Breadcrumb and Mode Title -->
+      <div class="flex items-center gap-3">
+        <nav class="flex items-center gap-2 text-xs font-serif">
+          <span class="text-brand-subtext hover:text-brand-text cursor-pointer" onclick="switchView('dashboard')">Journal</span>
+          <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-brand-subtext"></i>
+          <span id="currentBreadcrumb" class="text-brand-gold font-bold tracking-wide">Dashboard</span>
+        </nav>
+        <span class="h-4 w-[1px] bg-brand-border"></span>
+        <div class="flex items-center gap-1.5 text-xs text-brand-subtext">
+          <span class="w-2 h-2 rounded-full bg-brand-gold"></span>
+          <span class="font-mono text-[11px]" id="liveDateIndicator">September 2026</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons & Mode Filter -->
+      <div class="flex items-center gap-3">
+        
+        <!-- Filter Tabs: All / Live / Backtest -->
+        <div class="bg-brand-surface p-1 rounded-lg border border-brand-border flex items-center text-xs">
+          <button onclick="setTradeFilter('all')" id="filter-all" class="px-3 py-1 rounded-md font-medium text-brand-gold bg-brand-card border border-brand-border text-[11px]">All</button>
+          <button onclick="setTradeFilter('live')" id="filter-live" class="px-3 py-1 rounded-md font-medium text-brand-subtext hover:text-brand-text text-[11px]">Live</button>
+          <button onclick="setTradeFilter('backtest')" id="filter-backtest" class="px-3 py-1 rounded-md font-medium text-brand-subtext hover:text-brand-text text-[11px]">Backtest</button>
+        </div>
+
+        <!-- Export CSV Button -->
+        <button onclick="exportTradesCSV()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-brand-card hover:bg-brand-cardHover border border-brand-border text-xs text-brand-text transition-all">
+          <i data-lucide="download" class="w-3.5 h-3.5 text-brand-gold"></i>
+          <span>Export CSV</span>
+        </button>
+
+        <!-- Sync Sheets Button -->
+        <button onclick="openSyncModal()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-brand-card hover:bg-brand-cardHover border border-brand-border text-xs text-brand-text transition-all">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-brand-gold" id="syncHeaderIcon"></i>
+          <span>Sync Sheets</span>
+        </button>
+
+        <!-- + New Entry CTA -->
+        <button onclick="openTradeModal()" class="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-gradient-to-r from-brand-gold to-brand-goldHover text-black text-xs font-bold shadow-glow-gold transition-all transform active:scale-95 border border-brand-goldLight">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>New Entry</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Content Views Wrapper -->
+    <div class="p-8 space-y-6 flex-1">
+
+      <!-- ========================================== -->
+      <!-- VIEW 1: DASHBOARD VIEW -->
+      <!-- ========================================== -->
+      <section id="view-dashboard" class="space-y-6">
+        
+        <!-- Header Text -->
+        <div>
+          <h2 class="text-2xl font-bold font-serif text-brand-gold tracking-wide">Dashboard</h2>
+          <p class="text-xs text-brand-subtext">Your trading performance at a glance</p>
+        </div>
+
+        <!-- 5 KPI Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+          
+          <!-- Card 1: Valid Win Rate -->
+          <div class="bg-brand-card card-glow border border-brand-border rounded-xl p-4 relative group hover:border-brand-gold transition-all hover:shadow-glow-gold">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-serif font-bold text-brand-subtext tracking-wider uppercase">Valid Win Rate</span>
+              <div class="w-7 h-7 rounded-lg bg-brand-surface flex items-center justify-center text-brand-gold border border-brand-border">
+                <i data-lucide="trending-up" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div class="flex items-baseline gap-2 mb-1">
+              <span id="kpi-winrate" class="text-2xl font-bold font-mono text-white tracking-tight">68.4%</span>
+              <span class="text-[10px] text-brand-gold font-mono font-medium">+4.2%</span>
+            </div>
+            <p class="text-[11px] text-brand-subtext flex items-center gap-1">
+              <span>rule breaks excluded</span>
+            </p>
+          </div>
+
+          <!-- Card 2: Total Logged -->
+          <div class="bg-brand-card card-glow border border-brand-border rounded-xl p-4 relative group hover:border-brand-gold transition-all hover:shadow-glow-gold">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-serif font-bold text-brand-subtext tracking-wider uppercase">Total Logged</span>
+              <div class="w-7 h-7 rounded-lg bg-brand-surface flex items-center justify-center text-brand-bronze border border-brand-border">
+                <i data-lucide="layout-grid" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div class="flex items-baseline gap-2 mb-1">
+              <span id="kpi-total-logged" class="text-2xl font-bold font-mono text-brand-goldLight tracking-tight">24</span>
+              <span class="text-[10px] text-brand-subtext font-mono">trades</span>
+            </div>
+            <p id="kpi-logged-breakdown" class="text-[11px] text-brand-subtext font-mono">16W / 6L / 2BE</p>
+          </div>
+
+          <!-- Card 3: Rule Breaks -->
+          <div class="bg-brand-card card-glow border border-brand-border rounded-xl p-4 relative group hover:border-brand-copper transition-all hover:shadow-glow-copper">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-serif font-bold text-brand-subtext tracking-wider uppercase">Rule Breaks</span>
+              <div class="w-7 h-7 rounded-lg bg-brand-surface flex items-center justify-center text-brand-copper border border-brand-border">
+                <i data-lucide="x-circle" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div class="flex items-baseline gap-2 mb-1">
+              <span id="kpi-rule-breaks" class="text-2xl font-bold font-mono text-brand-copper tracking-tight">1</span>
+              <span class="text-[10px] text-brand-gold font-mono font-medium">96% discipline</span>
+            </div>
+            <p class="text-[11px] text-brand-subtext truncate">CTT + early entry</p>
+          </div>
+
+          <!-- Card 4: Backtest Days -->
+          <div class="bg-brand-card card-glow border border-brand-border rounded-xl p-4 relative group hover:border-brand-gold transition-all hover:shadow-glow-gold">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-serif font-bold text-brand-subtext tracking-wider uppercase">Backtest Days</span>
+              <div class="w-7 h-7 rounded-lg bg-brand-surface flex items-center justify-center text-brand-gold border border-brand-border">
+                <i data-lucide="calendar" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div class="flex items-baseline gap-2 mb-1">
+              <span id="kpi-backtest-days" class="text-2xl font-bold font-mono text-white tracking-tight">14</span>
+              <span class="text-[10px] text-brand-gold font-mono font-medium">active</span>
+            </div>
+            <p class="text-[11px] text-brand-subtext">this month</p>
+          </div>
+
+          <!-- Card 5: A+ Setups -->
+          <div class="bg-brand-card card-glow border border-brand-border rounded-xl p-4 relative group hover:border-brand-gold transition-all hover:shadow-glow-gold">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-serif font-bold text-brand-subtext tracking-wider uppercase">A+ Setups</span>
+              <div class="w-7 h-7 rounded-lg bg-brand-surface flex items-center justify-center text-brand-gold border border-brand-border">
+                <i data-lucide="star" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div class="flex items-baseline gap-2 mb-1">
+              <span id="kpi-aplus-setups" class="text-2xl font-bold font-mono text-brand-gold tracking-tight">9</span>
+              <span class="text-[10px] text-brand-gold font-mono font-medium">88% WR</span>
+            </div>
+            <p class="text-[11px] text-brand-subtext truncate">All rules followed</p>
+          </div>
+
+        </div>
+
+        <!-- Main Middle Section: Calendar & Win Rate Breakdown (2-Column Grid) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          <!-- Left: Monthly Activity Calendar -->
+          <div class="lg:col-span-7 bg-brand-card card-glow border border-brand-border rounded-2xl p-6 shadow-subtle flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="compass" class="w-4 h-4 text-brand-gold"></i>
+                  <h3 class="text-sm font-bold font-serif text-brand-gold tracking-wider uppercase">Monthly Log</h3>
+                </div>
+                <!-- Legend -->
+                <div class="flex items-center gap-3 text-[11px] text-brand-subtext">
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full win-sphere"></span>
+                    <span>Win</span>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full loss-sphere"></span>
+                    <span>Loss</span>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full mixed-sphere"></span>
+                    <span>Mixed</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Month Title & Controls -->
+              <div class="flex items-center justify-between mb-4">
+                <span class="text-lg font-bold font-serif text-white" id="calendarMonthLabel">September 2026</span>
+                <div class="flex items-center gap-1">
+                  <button onclick="prevMonth()" class="p-1 rounded-md border border-brand-border bg-brand-surface text-brand-gold hover:bg-brand-borderHover transition">
+                    <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                  </button>
+                  <button onclick="goToCurrentMonth()" class="text-[10px] px-3 py-1 rounded bg-brand-surface border border-brand-border text-brand-gold hover:bg-brand-borderHover font-mono font-bold">Today</button>
+                  <button onclick="nextMonth()" class="p-1 rounded-md border border-brand-border bg-brand-surface text-brand-gold hover:bg-brand-borderHover transition">
+                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Days of Week Header -->
+              <div class="grid grid-cols-7 gap-2 mb-2 text-center border-b border-brand-border pb-2">
+                <span class="text-[10px] font-bold font-serif text-brand-gold uppercase tracking-widest">Su</span>
+                <span class="text-[10px] font-bold font-serif text-brand-gold uppercase tracking-widest">Mo</span>
+                <span class="text-[10px] font-bold font-serif text-brand-gold uppercase tracking-widest">Tu</span>
+                <span class="text-[10px] font-bold font-serif text-brand-gold uppercase tracking-widest">We</span>
+                <span class="text-[10px] font-bold font-serif text-brand-gold uppercase tracking-widest">Th</span>
+                <span class="text-[10px] font-bold font-serif text-brand-gold uppercase tracking-widest">Fr</span>
+                <span class="text-[10px] font-bold font-serif text-brand-gold uppercase tracking-widest">Sa</span>
+              </div>
+
+              <!-- Calendar Days Grid Container -->
+              <div id="calendarGrid" class="grid grid-cols-7 gap-2">
+                <!-- Dynamically populated via JS -->
+              </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-brand-border flex items-center justify-between text-[11px] text-brand-subtext">
+              <span>Click any date cell to inspect</span>
+              <span class="font-mono text-brand-gold">24 trades this cycle</span>
+            </div>
+          </div>
+
+          <!-- Right: Win Rate Breakdown Widget -->
+          <div class="lg:col-span-5 bg-brand-card card-glow border border-brand-border rounded-2xl p-6 shadow-subtle flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="target" class="w-4 h-4 text-brand-gold"></i>
+                  <h3 class="text-sm font-bold font-serif text-brand-gold tracking-wider uppercase">Win Rate</h3>
+                </div>
+                <!-- Breakdown Filter -->
+                <div class="flex bg-brand-surface p-0.5 rounded-lg border border-brand-border text-[10px]">
+                  <button onclick="changeBreakdownTab('grade')" id="tab-grade" class="px-2 py-0.5 rounded bg-brand-card text-brand-gold border border-brand-border font-bold shadow-sm">Grade</button>
+                  <button onclick="changeBreakdownTab('session')" id="tab-session" class="px-2 py-0.5 rounded text-brand-subtext hover:text-white font-medium">Session</button>
+                  <button onclick="changeBreakdownTab('direction')" id="tab-direction" class="px-2 py-0.5 rounded text-brand-subtext hover:text-white font-medium">Side</button>
+                </div>
+              </div>
+
+              <!-- Mechanical Doughnut Chart -->
+              <div class="relative flex items-center justify-center my-6 h-48 w-48 mx-auto nautical-rings p-2">
+                <canvas id="winRateChart"></canvas>
+                <div class="absolute flex flex-col items-center justify-center pointer-events-none text-center bg-brand-surface w-24 h-24 rounded-full border-2 border-brand-border shadow-inner">
+                  <span class="text-xl font-bold font-mono text-brand-gold" id="chartCenterWR">68.4%</span>
+                  <span class="text-[9px] text-brand-subtext uppercase tracking-widest font-bold">Win Rate</span>
+                </div>
+              </div>
+
+              <!-- Breakdown Stats -->
+              <div id="breakdownStatsList" class="space-y-2 mt-6 border-t border-brand-border pt-4">
+                <!-- Dynamically populated via JS -->
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Bottom Row: 3 Deep-Dive Analytics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          <!-- Card 1: Emotion Patterns (Now a mixed chart) -->
+          <div class="bg-brand-card card-glow border border-brand-border rounded-2xl p-5 shadow-subtle flex flex-col">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <i data-lucide="brain" class="w-4 h-4 text-brand-gold"></i>
+                <h4 class="text-xs font-bold font-serif text-brand-gold tracking-wider uppercase">Emotion Edge</h4>
+              </div>
+              <span class="text-[10px] text-brand-subtext font-mono">Psychology</span>
+            </div>
+            
+            <div class="flex-1 relative min-h-[150px]">
+               <canvas id="emotionPatternsChart"></canvas>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-brand-border text-[10px] text-brand-gold flex items-center gap-1.5">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 flex-shrink-0"></i>
+              <span>Discipline creates +$5,420 net gain</span>
+            </div>
+          </div>
+
+          <!-- Card 2: Top Confluences -->
+          <div class="bg-brand-card card-glow border border-brand-border rounded-2xl p-5 shadow-subtle">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <i data-lucide="layers" class="w-4 h-4 text-brand-gold"></i>
+                <h4 class="text-xs font-bold font-serif text-brand-gold tracking-wider uppercase">Top Confluences</h4>
+              </div>
+              <span class="text-[10px] text-brand-subtext font-mono">Rank</span>
+            </div>
+
+            <div class="space-y-2.5" id="confluencesContainer">
+              <div class="p-2 rounded-lg bg-brand-surface border border-brand-border flex items-center justify-between">
+                <div>
+                  <span class="text-xs font-bold text-brand-text block">FVG + Order Block Sweep</span>
+                  <span class="text-[10px] text-brand-subtext font-mono">11 trades • 81.8% WR</span>
+                </div>
+                <span class="text-xs font-mono font-bold text-brand-gold">+$3,850</span>
+              </div>
+              <div class="p-2 rounded-lg bg-brand-surface border border-brand-border flex items-center justify-between">
+                <div>
+                  <span class="text-xs font-bold text-brand-text block">Liquidity Grab + MSS</span>
+                  <span class="text-[10px] text-brand-subtext font-mono">8 trades • 75.0% WR</span>
+                </div>
+                <span class="text-xs font-mono font-bold text-brand-gold">+$2,240</span>
+              </div>
+              <div class="p-2 rounded-lg bg-brand-surface border border-brand-border flex items-center justify-between">
+                <div>
+                  <span class="text-xs font-bold text-brand-text block">PD Array + 0.618 Fib</span>
+                  <span class="text-[10px] text-brand-subtext font-mono">6 trades • 66.7% WR</span>
+                </div>
+                <span class="text-xs font-mono font-bold text-brand-gold">+$1,180</span>
+              </div>
+              <div class="p-2 rounded-lg bg-brand-surface border border-brand-border flex items-center justify-between">
+                <div>
+                  <span class="text-xs font-bold text-brand-text block">Trendline Liquidity Void</span>
+                  <span class="text-[10px] text-brand-subtext font-mono">4 trades • 50.0% WR</span>
+                </div>
+                <span class="text-xs font-mono font-bold text-brand-copper">-$210</span>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-brand-border text-[10px] text-brand-subtext flex items-center justify-between">
+              <span>Best edge: ICT FVG + OB Re-test</span>
+              <span class="font-mono text-brand-gold font-bold">3.4 Avg R</span>
+            </div>
+          </div>
+
+          <!-- Card 3: Best Pairs -->
+          <div class="bg-brand-card card-glow border border-brand-border rounded-2xl p-5 shadow-subtle flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2">
+                <i data-lucide="bar-chart-2" class="w-4 h-4 text-brand-gold"></i>
+                <h4 class="text-xs font-bold font-serif text-brand-gold tracking-wider uppercase">Best Pairs</h4>
+              </div>
+              <span class="text-[10px] text-brand-subtext font-mono">P&L Rank</span>
+            </div>
+
+            <!-- CSS Gradient Bars for Pairs -->
+            <div class="space-y-4 flex-1">
+              <div>
+                <div class="flex justify-between items-center text-xs mb-1">
+                  <span class="font-bold text-white">EUR/USD</span>
+                  <span class="font-mono text-brand-gold font-bold">+$3,240</span>
+                </div>
+                <div class="w-full bg-brand-surface border border-brand-border h-2 rounded-full overflow-hidden">
+                  <div class="h-full rounded-full" style="width: 80%; background: linear-gradient(90deg, #A37C5B, #D4AF37);"></div>
+                </div>
+              </div>
+              
+              <div>
+                <div class="flex justify-between items-center text-xs mb-1">
+                  <span class="font-bold text-white">XAU/USD</span>
+                  <span class="font-mono text-brand-gold font-bold">+$2,150</span>
+                </div>
+                <div class="w-full bg-brand-surface border border-brand-border h-2 rounded-full overflow-hidden">
+                  <div class="h-full rounded-full" style="width: 60%; background: linear-gradient(90deg, #A37C5B, #D4AF37);"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between items-center text-xs mb-1">
+                  <span class="font-bold text-white">NAS100</span>
+                  <span class="font-mono text-brand-gold font-bold">+$1,480</span>
+                </div>
+                <div class="w-full bg-brand-surface border border-brand-border h-2 rounded-full overflow-hidden">
+                  <div class="h-full rounded-full" style="width: 45%; background: linear-gradient(90deg, #A37C5B, #D4AF37);"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between items-center text-xs mb-1">
+                  <span class="font-bold text-white">GBP/JPY</span>
+                  <span class="font-mono text-brand-copper font-bold">-$450</span>
+                </div>
+                <div class="w-full bg-brand-surface border border-brand-border h-2 rounded-full overflow-hidden">
+                  <div class="h-full rounded-full" style="width: 15%; background: linear-gradient(90deg, #C05A3C, #7A3521);"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-brand-border text-[10px] text-brand-subtext flex items-center justify-between">
+              <span>Top Performer: EUR/USD</span>
+              <span class="font-mono text-brand-gold font-bold">9 trades • 77.8% WR</span>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW 2: TRADE LOG TABLE VIEW              -->
+      <!-- ========================================== -->
+      <section id="view-tradelog" class="hidden space-y-6">
+        
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-bold font-serif text-brand-gold tracking-wide">Trade Log</h2>
+            <p class="text-xs text-brand-subtext">Comprehensive history of all executions</p>
+          </div>
+          
+          <div class="flex items-center gap-3">
+            <select id="logSymbolFilter" onchange="renderTradeTable()" class="bg-brand-card border border-brand-border rounded-lg px-3 py-1.5 text-xs text-brand-text focus:outline-none">
+              <option value="ALL">All Pairs</option>
+              <option value="EUR/USD">EUR/USD</option>
+              <option value="XAU/USD">XAU/USD</option>
+              <option value="NAS100">NAS100</option>
+              <option value="GBP/JPY">GBP/JPY</option>
+              <option value="BTC/USD">BTC/USD</option>
+            </select>
+
+            <select id="logOutcomeFilter" onchange="renderTradeTable()" class="bg-brand-card border border-brand-border rounded-lg px-3 py-1.5 text-xs text-brand-text focus:outline-none">
+              <option value="ALL">All Outcomes</option>
+              <option value="WIN">Wins Only</option>
+              <option value="LOSS">Losses Only</option>
+              <option value="BE">Breakeven</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="bg-brand-card border border-brand-border rounded-2xl overflow-hidden shadow-card-shadow">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-brand-surface border-b border-brand-border text-[10px] font-bold font-serif text-brand-gold uppercase tracking-widest">
+                  <th class="py-3.5 px-4">Date / Time</th>
+                  <th class="py-3.5 px-4">Symbol</th>
+                  <th class="py-3.5 px-4">Side</th>
+                  <th class="py-3.5 px-4">Grade</th>
+                  <th class="py-3.5 px-4">Confluences</th>
+                  <th class="py-3.5 px-4 font-mono">Entry / Exit</th>
+                  <th class="py-3.5 px-4 font-mono">R:R</th>
+                  <th class="py-3.5 px-4 font-mono text-right">Net P&L</th>
+                  <th class="py-3.5 px-4 text-center">Rules</th>
+                  <th class="py-3.5 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tradeLogTableBody" class="divide-y divide-brand-border/60 text-xs">
+                <!-- Dynamically rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+          <div id="tableEmptyState" class="hidden py-12 text-center text-brand-subtext text-xs">
+            No trades match the current filters.
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW 3: ANALYSIS VIEW                      -->
+      <!-- ========================================== -->
+      <section id="view-analysis" class="hidden space-y-6">
+        <div>
+          <h2 class="text-2xl font-bold font-serif text-brand-gold tracking-wide">Deep Analysis</h2>
+          <p class="text-xs text-brand-subtext">Cumulative growth curve and timing distribution</p>
+        </div>
+
+        <!-- Equity Curve Chart -->
+        <div class="bg-brand-card card-glow border border-brand-border rounded-2xl p-6 shadow-subtle">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <span class="text-xs text-brand-subtext font-serif block tracking-widest uppercase font-bold">Account Balance</span>
+              <span class="text-xl font-bold font-mono text-brand-gold">+$6,420.00 (+6.42%)</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-1 rounded bg-brand-surface border border-brand-border text-[11px] font-mono text-brand-subtext">Starting: $100,000.00</span>
+              <span class="px-2.5 py-1 rounded border border-brand-copper/40 text-[11px] font-mono text-brand-copper font-bold">Max DD: -1.8%</span>
+            </div>
+          </div>
+          <div style="height: 300px;">
+            <canvas id="equityCurveChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Secondary Charts -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-brand-card border border-brand-border rounded-2xl p-6 shadow-subtle">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-sm font-bold font-serif text-brand-gold tracking-wider uppercase">Day of Week</h3>
+              <span class="text-[10px] text-brand-subtext font-mono">Win Rate %</span>
+            </div>
+            <div style="height: 220px;">
+              <canvas id="dayOfWeekChart"></canvas>
+            </div>
+          </div>
+
+          <div class="bg-brand-card border border-brand-border rounded-2xl p-6 shadow-subtle">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-sm font-bold font-serif text-brand-gold tracking-wider uppercase">Session R-Multiples</h3>
+              <span class="text-[10px] text-brand-subtext font-mono">Net R</span>
+            </div>
+            <div style="height: 220px;">
+              <canvas id="sessionPerformanceChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW 4: RULES VIEW                         -->
+      <!-- ========================================== -->
+      <section id="view-rules" class="hidden space-y-6">
+        <div>
+          <h2 class="text-2xl font-bold font-serif text-brand-gold tracking-wide">Execution Rules</h2>
+          <p class="text-xs text-brand-subtext">Strict discipline protocols and daily routine tracker</p>
+        </div>
+        <div class="bg-brand-card border border-brand-border rounded-2xl p-6 shadow-subtle">
+           <p class="text-white text-sm">Rules module loaded. Maintain discipline.</p>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW 5: NOTES VIEW                         -->
+      <!-- ========================================== -->
+      <section id="view-notes" class="hidden space-y-6">
+        <div>
+          <h2 class="text-2xl font-bold font-serif text-brand-gold tracking-wide">Notes & Ideas</h2>
+          <p class="text-xs text-brand-subtext">Observations and weekly market preps</p>
+        </div>
+        <div class="bg-brand-card border border-brand-border rounded-2xl p-6 shadow-subtle">
+           <p class="text-white text-sm">Notes module loaded.</p>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Modals and Drawers Below -->
+  
+  <!-- Day Summary Drawer -->
+  <div id="dayDetailDrawer" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex justify-end transition-opacity duration-300">
+    <div class="w-full max-w-md bg-brand-card border-l border-brand-border h-full flex flex-col p-6 shadow-2xl overflow-y-auto card-glow">
+      
+      <div class="flex items-center justify-between pb-4 border-b border-brand-border">
+        <div>
+          <span class="text-[10px] font-bold font-serif text-brand-gold tracking-widest uppercase">Daily Inspection</span>
+          <h3 class="text-lg font-bold font-serif text-white mt-1" id="drawerDateTitle">September 28, 2026</h3>
+        </div>
+        <button onclick="closeDayDrawer()" class="p-1.5 rounded-lg bg-brand-surface border border-brand-border text-brand-gold hover:text-brand-goldLight">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Day Statistics -->
+      <div class="grid grid-cols-3 gap-3 my-6 text-center">
+        <div class="p-3 rounded-xl bg-brand-surface border border-brand-border">
+          <span class="text-[10px] font-bold font-serif text-brand-subtext uppercase tracking-wider block mb-1">Daily P&L</span>
+          <span class="text-base font-mono font-bold text-brand-gold" id="drawerDailyPnL">+$840.00</span>
+        </div>
+        <div class="p-3 rounded-xl bg-brand-surface border border-brand-border">
+          <span class="text-[10px] font-bold font-serif text-brand-subtext uppercase tracking-wider block mb-1">Trades</span>
+          <span class="text-base font-mono font-bold text-white" id="drawerDailyTradesCount">2</span>
+        </div>
+        <div class="p-3 rounded-xl bg-brand-surface border border-brand-border">
+          <span class="text-[10px] font-bold font-serif text-brand-subtext uppercase tracking-wider block mb-1">Discipline</span>
+          <span class="text-base font-mono font-bold text-brand-gold" id="drawerDailyDiscipline">100%</span>
+        </div>
+      </div>
+
+      <!-- Day's Trades -->
+      <div class="flex-1 space-y-4" id="drawerTradesList">
+        <!-- JS renders here -->
+      </div>
+
+      <!-- Drawer Action -->
+      <div class="pt-6 border-t border-brand-border mt-4">
+        <button onclick="openTradeModalForSelectedDay()" class="w-full py-3 rounded-xl bg-gradient-to-r from-brand-gold to-brand-goldHover text-black font-bold shadow-glow-gold flex items-center justify-center gap-2 border border-brand-goldLight">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Log Trade On This Date</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- New Trade Entry Modal -->
+  <div id="tradeModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-brand-card border border-brand-border rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden card-glow">
+      
+      <div class="px-6 py-5 border-b border-brand-border flex items-center justify-between bg-brand-surface">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full border border-brand-gold text-brand-gold flex items-center justify-center bg-brand-bg shadow-glow-gold">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold font-serif text-brand-gold tracking-wide">Log Execution</h3>
+          </div>
+        </div>
+        <button onclick="closeTradeModal()" class="p-1 rounded-lg border border-brand-border text-brand-gold hover:bg-brand-bg">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <form id="tradeForm" onsubmit="handleTradeSubmit(event)" class="p-6 space-y-5 overflow-y-auto text-xs">
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] font-bold font-serif text-brand-gold uppercase tracking-wider mb-1.5">Journal Mode</label>
+            <select class="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-white">
+              <option value="Live">Live Trade</option>
+              <option value="Backtest">Backtest</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold font-serif text-brand-gold uppercase tracking-wider mb-1.5">Date</label>
+            <input type="date" id="inputTradeDate" required class="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-white font-mono">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 bg-brand-surface p-4 rounded-xl border border-brand-border shadow-inner">
+          <div>
+            <label class="block text-[10px] font-bold text-brand-subtext uppercase tracking-wider mb-1.5">Entry</label>
+            <input type="number" step="any" id="inputEntryPrice" placeholder="0.00" required oninput="calculateRR()" class="w-full bg-brand-card border border-brand-border rounded-lg px-2.5 py-1.5 font-mono text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-brand-subtext uppercase tracking-wider mb-1.5">Stop</label>
+            <input type="number" step="any" id="inputStopLoss" placeholder="0.00" required oninput="calculateRR()" class="w-full bg-brand-card border border-brand-border rounded-lg px-2.5 py-1.5 font-mono text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-brand-subtext uppercase tracking-wider mb-1.5">Target</label>
+            <input type="number" step="any" id="inputExitPrice" placeholder="0.00" required oninput="calculateRR()" class="w-full bg-brand-card border border-brand-border rounded-lg px-2.5 py-1.5 font-mono text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-brand-gold uppercase tracking-wider mb-1.5">Net P&L ($)</label>
+            <input type="number" step="any" id="inputNetPnL" placeholder="+0.00" required class="w-full bg-brand-card border border-brand-gold/50 rounded-lg px-2.5 py-1.5 font-mono text-brand-gold font-bold">
+          </div>
+        </div>
+
+        <div class="pt-4 flex justify-end gap-3 border-t border-brand-border">
+          <button type="button" onclick="closeTradeModal()" class="px-5 py-2.5 rounded-lg border border-brand-border text-brand-text hover:bg-brand-surface font-bold">Cancel</button>
+          <button type="submit" class="px-6 py-2.5 rounded-lg bg-gradient-to-r from-brand-gold to-brand-goldHover text-black font-bold shadow-glow-gold">Log Trade</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Minimal Data
+    const DEFAULT_TRADES = [
+      { id: 'TRD-1', date: '2026-09-02', symbol: 'EUR/USD', direction: 'LONG', mode: 'Live', session: 'London', entry: 1.082, stopLoss: 1.081, exit: 1.086, rr: 4.0, pnl: 720.00, outcome: 'WIN', grade: 'A+', confluences: ['FVG', 'OB Sweep'], emotion: 'Disciplined', followedRules: true, ruleBreach: '', notes: 'Clean setup.' },
+      { id: 'TRD-2', date: '2026-09-10', symbol: 'GBP/JPY', direction: 'LONG', mode: 'Live', session: 'London', entry: 191.2, stopLoss: 191.0, exit: 190.9, rr: -1.0, pnl: -450.00, outcome: 'LOSS', grade: 'C', confluences: ['Liquidity'], emotion: 'FOMO', followedRules: false, ruleBreach: 'CTT', notes: 'Impulsive entry.' },
+      { id: 'TRD-3', date: '2026-09-28', symbol: 'EUR/USD', direction: 'LONG', mode: 'Live', session: 'London', entry: 1.084, stopLoss: 1.082, exit: 1.088, rr: 2.0, pnl: 540.00, outcome: 'WIN', grade: 'A+', confluences: ['FVG', 'OB'], emotion: 'Disciplined', followedRules: true, ruleBreach: '', notes: 'Day 28 trade.' }
+    ];
+
+    let trades = [...DEFAULT_TRADES];
+    let selectedDate = '2026-09-28';
+    let currentYear = 2026;
+    let currentMonth = 8;
+    let currentBreakdownTab = 'grade';
+    
+    // Chart Instances
+    let winRateChartInstance = null;
+    let emotionChartInstance = null;
+    let equityChartInstance = null;
+    let dowChartInstance = null;
+    let sessionChartInstance = null;
+
+    // Chart.js Global Defaults for Theme
+    Chart.defaults.color = '#8C837A';
+    Chart.defaults.font.family = 'JetBrains Mono';
+
+    function init() {
+      renderCalendar();
+      renderWinRateChart();
+      renderEmotionChart();
+      renderTradeTable();
+      renderAnalysisCharts();
+      lucide.createIcons();
+    }
+
+    function renderCalendar() {
+      const calendarGrid = document.getElementById('calendarGrid');
+      if (!calendarGrid) return;
+      calendarGrid.innerHTML = '';
+
+      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      document.getElementById('calendarMonthLabel').innerText = `${monthNames[currentMonth]} ${currentYear}`;
+
+      const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
+      const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+      for (let i = 0; i < firstDayIndex; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'h-16 border border-brand-border/20 rounded-lg opacity-10';
+        calendarGrid.appendChild(emptyCell);
+      }
+
+      for (let day = 1; day <= totalDays; day++) {
+        const dayStr = day < 10 ? `0${day}` : `${day}`;
+        const monthStr = (currentMonth + 1) < 10 ? `0${currentMonth + 1}` : `${currentMonth + 1}`;
+        const dateKey = `${currentYear}-${monthStr}-${dayStr}`;
+
+        const dayTrades = trades.filter(t => t.date === dateKey);
+        let outcomeState = 'none';
+        let netPnL = 0;
+
+        if (dayTrades.length > 0) {
+          const hasWin = dayTrades.some(t => t.outcome === 'WIN');
+          const hasLoss = dayTrades.some(t => t.outcome === 'LOSS');
+          netPnL = dayTrades.reduce((sum, t) => sum + t.pnl, 0);
+          if (hasWin && hasLoss) outcomeState = 'mixed';
+          else if (hasWin) outcomeState = 'win';
+          else if (hasLoss) outcomeState = 'loss';
+          else outcomeState = 'mixed';
+        }
+
+        const isSelected = (dateKey === selectedDate);
+        const cell = document.createElement('div');
+        
+        let cellClasses = 'h-16 rounded-xl p-2 flex flex-col justify-between cursor-pointer border transition-all ';
+        if (isSelected) {
+          cellClasses += 'selected';
+        } else {
+          cellClasses += 'bg-brand-surface border-brand-border hover:border-brand-gold/50';
+        }
+        cell.className = cellClasses;
+        cell.onclick = () => selectCalendarDay(dateKey);
+
+        let dotHtml = '';
+        if (outcomeState === 'win') dotHtml = `<div class="w-3 h-3 rounded-full win-sphere mx-auto mt-1"></div>`;
+        if (outcomeState === 'loss') dotHtml = `<div class="w-3 h-3 rounded-full loss-sphere mx-auto mt-1"></div>`;
+        if (outcomeState === 'mixed') dotHtml = `<div class="w-3 h-3 rounded-full mixed-sphere mx-auto mt-1"></div>`;
+
+        let pnlHtml = dayTrades.length > 0 ? `<span class="text-[9px] font-mono font-bold ${netPnL >= 0 ? 'text-brand-gold' : 'text-brand-copper'}">${netPnL >= 0 ? '+' : ''}$${Math.abs(netPnL)}</span>` : '';
+
+        cell.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold font-serif ${isSelected ? 'text-brand-gold' : 'text-brand-text'}">${day}</span>
+            ${pnlHtml}
+          </div>
+          ${dotHtml}
+        `;
+        calendarGrid.appendChild(cell);
+      }
+    }
+
+    function selectCalendarDay(dateKey) {
+      selectedDate = dateKey;
+      renderCalendar();
+      openDayDrawer(dateKey);
+    }
+
+    function openDayDrawer(dateKey) {
+      const drawer = document.getElementById('dayDetailDrawer');
+      document.getElementById('drawerDateTitle').innerText = new Date(dateKey).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      
+      const dayTrades = trades.filter(t => t.date === dateKey);
+      document.getElementById('drawerDailyTradesCount').innerText = dayTrades.length;
+      
+      const totalPnL = dayTrades.reduce((acc, t) => acc + t.pnl, 0);
+      document.getElementById('drawerDailyPnL').innerText = (totalPnL >= 0 ? '+' : '') + `$${Math.abs(totalPnL).toFixed(2)}`;
+      document.getElementById('drawerDailyPnL').className = `text-base font-mono font-bold ${totalPnL >= 0 ? 'text-brand-gold' : 'text-brand-copper'}`;
+
+      const list = document.getElementById('drawerTradesList');
+      list.innerHTML = '';
+      if(dayTrades.length === 0) {
+        list.innerHTML = `<p class="text-brand-subtext text-xs text-center py-8 font-serif italic">No trades logged on this day.</p>`;
+      } else {
+        dayTrades.forEach(t => {
+          list.innerHTML += `
+            <div class="p-4 rounded-xl bg-brand-surface border border-brand-border">
+              <div class="flex justify-between items-center mb-2">
+                <span class="font-bold text-white text-sm">${t.symbol}</span>
+                <span class="font-mono font-bold ${t.pnl >= 0 ? 'text-brand-gold' : 'text-brand-copper'}">${t.pnl >= 0 ? '+' : ''}$${t.pnl}</span>
+              </div>
+              <p class="text-[11px] text-brand-subtext">${t.notes}</p>
+            </div>
+          `;
+        });
+      }
+      drawer.classList.remove('hidden');
+    }
+
+    function closeDayDrawer() {
+      document.getElementById('dayDetailDrawer').classList.add('hidden');
+    }
+    function openTradeModal() { document.getElementById('tradeModal').classList.remove('hidden'); }
+    function closeTradeModal() { document.getElementById('tradeModal').classList.add('hidden'); }
+    function openTradeModalForSelectedDay() { closeDayDrawer(); document.getElementById('inputTradeDate').value = selectedDate; openTradeModal(); }
+
+    function renderWinRateChart() {
+      const ctx = document.getElementById('winRateChart');
+      if (winRateChartInstance) winRateChartInstance.destroy();
+
+      winRateChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['A+ Setup', 'A Setup', 'B Setup', 'C Setup'],
+          datasets: [{
+            data: [9, 5, 2, 1],
+            backgroundColor: ['#D4AF37', '#A37C5B', '#5E4631', '#C05A3C'],
+            borderColor: '#161515',
+            borderWidth: 4,
+            cutout: '80%'
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } }
+        }
+      });
+      
+      document.getElementById('breakdownStatsList').innerHTML = `
+        <div class="flex justify-between items-center text-xs mb-2"><span class="text-brand-text font-bold"><span class="text-brand-gold mr-1">■</span> A+ Setups</span><span class="text-brand-gold font-mono font-bold">88.0% WR</span></div>
+        <div class="flex justify-between items-center text-xs mb-2"><span class="text-brand-text font-bold"><span class="text-brand-bronze mr-1">■</span> A Setups</span><span class="text-brand-gold font-mono font-bold">75.0% WR</span></div>
+      `;
+    }
+
+    function renderEmotionChart() {
+      const ctx = document.getElementById('emotionPatternsChart');
+      if (emotionChartInstance) emotionChartInstance.destroy();
+
+      emotionChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Disc.', 'Patient', 'Hesit.', 'FOMO'],
+          datasets: [
+            {
+              type: 'line',
+              label: 'Win Rate %',
+              data: [85, 80, 50, 33],
+              borderColor: '#FFDF73',
+              borderWidth: 2,
+              pointBackgroundColor: '#161515',
+              pointBorderColor: '#FFDF73',
+              pointBorderWidth: 2,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              tension: 0.4
+            },
+            {
+              type: 'bar',
+              label: 'Trades',
+              data: [14, 5, 2, 3],
+              backgroundColor: '#A37C5B',
+              borderRadius: 4,
+              barThickness: 16
+            }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: {
+            x: { grid: { display: false } },
+            y: { grid: { color: '#3A322A' }, beginAtZero: true }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    function renderAnalysisCharts() {
+      const eqCtx = document.getElementById('equityCurveChart');
+      if (equityChartInstance) equityChartInstance.destroy();
+      equityChartInstance = new Chart(eqCtx, {
+        type: 'line',
+        data: {
+          labels: ['Start', 'W1', 'W2', 'W3', 'W4'],
+          datasets: [{
+            data: [100000, 101200, 102500, 101800, 106420],
+            borderColor: '#D4AF37',
+            backgroundColor: 'rgba(212, 175, 55, 0.1)',
+            fill: true,
+            tension: 0.3,
+            borderWidth: 3,
+            pointBackgroundColor: '#161515',
+            pointBorderColor: '#D4AF37',
+            pointRadius: 4
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: {
+            x: { grid: { color: '#25221F' } },
+            y: { grid: { color: '#25221F' } }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      const dowCtx = document.getElementById('dayOfWeekChart');
+      if (dowChartInstance) dowChartInstance.destroy();
+      dowChartInstance = new Chart(dowCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+          datasets: [{ data: [75, 80, 66, 71, 83], backgroundColor: '#A37C5B', borderRadius: 4 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: {grid:{display:false}}, y: {grid:{color:'#3A322A'}} } }
+      });
+
+      const sesCtx = document.getElementById('sessionPerformanceChart');
+      if (sessionChartInstance) sessionChartInstance.destroy();
+      sessionChartInstance = new Chart(sesCtx, {
+        type: 'bar',
+        data: {
+          labels: ['London', 'NY AM', 'NY PM', 'Asian'],
+          datasets: [{ data: [12.5, 18.0, -1.0, 1.5], backgroundColor: ['#D4AF37', '#B3912B', '#C05A3C', '#5E4631'], borderRadius: 4 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: {grid:{display:false}}, y: {grid:{color:'#3A322A'}} } }
+      });
+    }
+
+    function renderTradeTable() {
+      const tbody = document.getElementById('tradeLogTableBody');
+      tbody.innerHTML = '';
+      trades.forEach(t => {
+        const pnlStr = t.pnl >= 0 ? `<span class="text-brand-gold font-bold">+$${t.pnl}</span>` : `<span class="text-brand-copper font-bold">-$${Math.abs(t.pnl)}</span>`;
+        tbody.innerHTML += `
+          <tr class="border-b border-brand-border/50 hover:bg-brand-card transition">
+            <td class="py-3 px-4 font-mono text-[11px] text-brand-subtext">${t.date}</td>
+            <td class="py-3 px-4 font-bold text-white">${t.symbol}</td>
+            <td class="py-3 px-4 font-mono text-[10px]"><span class="px-2 py-1 rounded border border-brand-border">${t.direction}</span></td>
+            <td class="py-3 px-4 font-bold text-brand-gold">${t.grade}</td>
+            <td class="py-3 px-4 text-brand-subtext text-[11px]">${t.confluences.join(', ')}</td>
+            <td class="py-3 px-4 font-mono text-brand-subtext text-[11px]">${t.entry} → ${t.exit}</td>
+            <td class="py-3 px-4 font-mono text-brand-text text-[11px]">${t.rr}R</td>
+            <td class="py-3 px-4 text-right">${pnlStr}</td>
+            <td class="py-3 px-4 text-center text-[10px] text-brand-gold font-bold">✓</td>
+            <td class="py-3 px-4 text-right"><button class="text-brand-gold hover:text-white"><i data-lucide="eye" class="w-4 h-4"></i></button></td>
+          </tr>
+        `;
+      });
+      lucide.createIcons();
+    }
+
+    function switchView(view) {
+      ['dashboard', 'tradelog', 'analysis', 'rules', 'notes'].forEach(v => {
+        const el = document.getElementById(`view-${v}`);
+        if(el) el.classList.add('hidden');
+      });
+      const target = document.getElementById(`view-${view}`);
+      if(target) target.classList.remove('hidden');
+      
+      const titles = { dashboard: 'Dashboard', tradelog: 'Trade Log', analysis: 'Analysis', rules: 'Rules', notes: 'Notes & Ideas' };
+      document.getElementById('currentBreadcrumb').innerText = titles[view] || 'Dashboard';
+      
+      if(view === 'analysis') renderAnalysisCharts();
+    }
+
+    function prevMonth() { currentMonth--; if(currentMonth<0){currentMonth=11;currentYear--;} renderCalendar(); }
+    function nextMonth() { currentMonth++; if(currentMonth>11){currentMonth=0;currentYear++;} renderCalendar(); }
+    function goToCurrentMonth() { currentYear = 2026; currentMonth = 8; renderCalendar(); }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
