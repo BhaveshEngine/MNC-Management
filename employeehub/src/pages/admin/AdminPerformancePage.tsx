@@ -5,7 +5,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { useAppStore, Goal, PerformanceReview } from '@/store/AppStore';
+import { useAppStore, type Goal, type PerformanceReview } from '@/store/AppStore';
 import { cn } from '@/lib/utils';
 import { Modal } from '@/components/ui/Modal';
 
