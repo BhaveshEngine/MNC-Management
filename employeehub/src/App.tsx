@@ -10,6 +10,8 @@ import { DashboardPage } from '@/pages/DashboardPage';
 import { EmployeesPage } from '@/pages/EmployeesPage';
 import { EmployeeProfilePage } from '@/pages/EmployeeProfilePage';
 import { DepartmentsPage } from '@/pages/DepartmentsPage';
+import { AdminAttendancePage } from '@/pages/admin/AdminAttendancePage';
+import { AdminLeavePage } from '@/pages/admin/AdminLeavePage';
 import { EmployeeDashboard } from '@/pages/employee/EmployeeDashboard';
 import { EmployeeLeavePage } from '@/pages/employee/EmployeeLeavePage';
 import { EmployeeProfilePage as MyProfilePage } from '@/pages/employee/EmployeeProfilePage';
@@ -62,8 +64,8 @@ function AdminLayout() {
             <Route path="/departments" element={<DepartmentsPage />} />
             <Route path="/organization" element={<Placeholder title="Organization Chart" />} />
             <Route path="/directory" element={<Placeholder title="Employee Directory" />} />
-            <Route path="/attendance" element={<Placeholder title="Attendance" />} />
-            <Route path="/leave" element={<Placeholder title="Leave Management" />} />
+            <Route path="/attendance" element={<AdminAttendancePage />} />
+            <Route path="/leave" element={<AdminLeavePage />} />
             <Route path="/holidays" element={<Placeholder title="Holidays" />} />
             <Route path="/payroll" element={<Placeholder title="Payroll" />} />
             <Route path="/payslips" element={<Placeholder title="Payslips" />} />

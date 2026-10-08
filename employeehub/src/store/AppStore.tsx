@@ -297,6 +297,8 @@ interface AppStoreContextType {
   checkIn: (employeeId: string) => void;
   checkOut: (employeeId: string) => void;
   requestAttendanceCorrection: (req: Omit<AttendanceCorrection, 'id' | 'status' | 'appliedOn'>) => void;
+  approveAttendanceCorrection: (id: string, reviewerName: string) => void;
+  rejectAttendanceCorrection: (id: string, reviewerName: string) => void;
   // Assets & Documents
   reportAssetIssue: (req: Omit<AssetIssue, 'id' | 'status' | 'reportedOn'>) => void;
   uploadDocument: (doc: Omit<EmployeeDocument, 'id' | 'uploadedOn' | 'status'>) => void;
@@ -325,6 +327,7 @@ interface AppStoreContextType {
   getNotificationsForUser: (userId: string) => AppNotification[];
   getUnreadCount: (userId: string) => number;
   getLeaveBalance: (employeeId: string) => LeaveBalance | undefined;
+  updateLeaveBalance: (employeeId: string, typeKey: 'annual' | 'sick' | 'casual', total: number, used: number) => void;
 }
 
 const AppStoreContext = createContext<AppStoreContextType | null>(null);
@@ -438,6 +441,46 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     setState(s => ({ ...s, attendanceCorrections: [newReq, ...s.attendanceCorrections], notifications: [newNotif, ...s.notifications] }));
   }, []);
 
+  const approveAttendanceCorrection = useCallback((id: string, reviewerName: string) => {
+    setState(s => {
+      const req = s.attendanceCorrections.find(c => c.id === id);
+      if (!req) return s;
+      const updatedReqs = s.attendanceCorrections.map(c => c.id === id ? { ...c, status: 'Approved' as const } : c);
+      const notif: AppNotification = {
+        id: `notif-${genId()}`, targetUserId: req.employeeId, title: 'Attendance Correction Approved',
+        message: `Your correction for ${req.date} has been approved by ${reviewerName}.`,
+        time: now(), read: false, type: 'attendance',
+      };
+      
+      // Update actual attendance record if it exists, or create a new one
+      const existingAttIndex = s.attendance.findIndex(a => a.employeeId === req.employeeId && a.date === req.date);
+      let updatedAtt = [...s.attendance];
+      if (existingAttIndex >= 0) {
+        updatedAtt[existingAttIndex] = { ...updatedAtt[existingAttIndex], checkIn: req.checkIn, checkOut: req.checkOut, hours: calcHours(req.checkIn, req.checkOut), status: 'Present' };
+      } else {
+        updatedAtt.push({
+          id: `att-${genId()}`, employeeId: req.employeeId, date: req.date, checkIn: req.checkIn, checkOut: req.checkOut, hours: calcHours(req.checkIn, req.checkOut), status: 'Present'
+        });
+      }
+
+      return { ...s, attendanceCorrections: updatedReqs, attendance: updatedAtt, notifications: [notif, ...s.notifications] };
+    });
+  }, []);
+
+  const rejectAttendanceCorrection = useCallback((id: string, reviewerName: string) => {
+    setState(s => {
+      const req = s.attendanceCorrections.find(c => c.id === id);
+      if (!req) return s;
+      const updatedReqs = s.attendanceCorrections.map(c => c.id === id ? { ...c, status: 'Rejected' as const } : c);
+      const notif: AppNotification = {
+        id: `notif-${genId()}`, targetUserId: req.employeeId, title: 'Attendance Correction Rejected',
+        message: `Your correction for ${req.date} has been rejected by ${reviewerName}.`,
+        time: now(), read: false, type: 'attendance',
+      };
+      return { ...s, attendanceCorrections: updatedReqs, notifications: [notif, ...s.notifications] };
+    });
+  }, []);
+
   // ── Assets & Documents ──
   const reportAssetIssue = useCallback((req: Omit<AssetIssue, 'id' | 'status' | 'reportedOn'>) => {
     const newReq: AssetIssue = { ...req, id: `iss-${genId()}`, status: 'Pending', reportedOn: new Date().toISOString().split('T')[0] };
@@ -527,17 +570,26 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   }, [state.notifications]);
   const getLeaveBalance = useCallback((employeeId: string) => (state.leaveBalances || []).find(b => b.employeeId === employeeId), [state.leaveBalances]);
 
+  const updateLeaveBalance = useCallback((employeeId: string, typeKey: 'annual' | 'sick' | 'casual', total: number, used: number) => {
+    setState(s => ({
+      ...s,
+      leaveBalances: (s.leaveBalances || []).map(b => b.employeeId === employeeId ? {
+        ...b, [typeKey]: { total, used }
+      } : b)
+    }));
+  }, []);
+
   return (
     <AppStoreContext.Provider value={{
       state, updateEmployee, submitLeave, approveLeave, rejectLeave,
-      checkIn, checkOut, requestAttendanceCorrection, reportAssetIssue, uploadDocument,
+      checkIn, checkOut, requestAttendanceCorrection, approveAttendanceCorrection, rejectAttendanceCorrection, reportAssetIssue, uploadDocument,
       submitGeneralRequest, cancelRequest,
       addAnnouncement, addNotification, markNotificationRead, markAllNotificationsRead,
       getEmployee, getLeavesByEmployee, getPendingLeaves, getAttendanceByEmployee,
       getPayslipsByEmployee, getGoalsByEmployee, getReviewsByEmployee,
       getAssetsByEmployee, getDocumentsByEmployee,
       getGeneralRequestsByEmployee, getAssetIssuesByEmployee, getAttendanceCorrectionsByEmployee,
-      getNotificationsForUser, getUnreadCount, getLeaveBalance,
+      getNotificationsForUser, getUnreadCount, getLeaveBalance, updateLeaveBalance
     }}>
       {children}
     </AppStoreContext.Provider>
