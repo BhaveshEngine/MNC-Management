@@ -647,14 +647,17 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         // Skip if already generated
         if ((s.payslips || []).some(p => p.employeeId === emp.id && p.month === month)) return;
         
-        const struct = (s.salaryStructures || []).find(st => st.employeeId === emp.id) || { gross: 65000, net: 58450, components: [] };
-        const deductions = struct.gross - struct.net;
+        const struct = (s.salaryStructures || []).find(st => st.employeeId === emp.id);
+        const gross = struct ? struct.gross : emp.salary;
+        const net = struct ? struct.net : (emp.salary * 0.9);
+        const deductions = gross - net;
+
         newPayslips.push({
           id: `ps-${genId()}`,
           employeeId: emp.id,
           month,
-          grossSalary: struct.gross,
-          netSalary: struct.net,
+          grossSalary: gross,
+          netSalary: net,
           deductions,
           status: 'Processed'
         });

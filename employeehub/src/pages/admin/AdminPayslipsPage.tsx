@@ -1,17 +1,14 @@
 import { useState } from 'react';
-import { Search, DollarSign, Download, Users, FileText, CheckCircle2 } from 'lucide-react';
+import { Search, Download, Receipt } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useAppStore } from '@/store/AppStore';
-import { useAuth } from '@/contexts/AuthContext';
 
-export function AdminPayrollPage() {
-  const { state, generatePayroll, markPayslipPaid } = useAppStore();
-  const { user } = useAuth();
-  const adminName = user?.name || 'Administrator';
+export function AdminPayslipsPage() {
+  const { state } = useAppStore();
   
   const [selectedMonth, setSelectedMonth] = useState('September 2026');
   const [searchQuery, setSearchQuery] = useState('');
@@ -37,56 +34,12 @@ export function AdminPayrollPage() {
     return matchesSearch && matchesDept;
   });
 
-  const totalExpense = currentMonthPayslips.reduce((acc, p) => acc + p.grossSalary, 0);
-  const totalDeductions = currentMonthPayslips.reduce((acc, p) => acc + (p.grossSalary - p.netSalary), 0);
-  const employeesPaid = currentMonthPayslips.filter(p => p.status === 'Paid').length;
-  const pendingPayroll = currentMonthPayslips.filter(p => p.status !== 'Paid').length;
-
   return (
     <div className="max-w-[1400px] mx-auto animate-slide-up space-y-6">
       <PageHeader
-        title="Payroll Management"
-        subtitle="Manage employee salaries and process monthly payroll."
-        actions={
-          <Button onClick={() => generatePayroll(selectedMonth, adminName)} icon={<FileText className="w-4 h-4" />}>
-            Generate Payroll
-          </Button>
-        }
+        title="Payslips"
+        subtitle="View and download generated payslips for all employees."
       />
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="flex flex-col">
-          <div className="flex items-center gap-3 mb-2 text-gray-500">
-            <div className="p-2 bg-blue-50 text-brand-600 rounded-lg"><DollarSign className="w-5 h-5" /></div>
-            <span className="text-[13px] font-medium uppercase tracking-wider">Monthly Expense</span>
-          </div>
-          <p className="text-[24px] font-bold text-gray-900 mt-2">₹{totalExpense.toLocaleString('en-IN')}</p>
-        </Card>
-        
-        <Card className="flex flex-col">
-          <div className="flex items-center gap-3 mb-2 text-gray-500">
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><Users className="w-5 h-5" /></div>
-            <span className="text-[13px] font-medium uppercase tracking-wider">Employees Paid</span>
-          </div>
-          <p className="text-[24px] font-bold text-gray-900 mt-2">{employeesPaid} <span className="text-[14px] text-gray-400 font-normal">/ {currentMonthPayslips.length || 0}</span></p>
-        </Card>
-
-        <Card className="flex flex-col">
-          <div className="flex items-center gap-3 mb-2 text-gray-500">
-            <div className="p-2 bg-warning-50 text-warning-600 rounded-lg"><FileText className="w-5 h-5" /></div>
-            <span className="text-[13px] font-medium uppercase tracking-wider">Pending Payroll</span>
-          </div>
-          <p className="text-[24px] font-bold text-gray-900 mt-2">{pendingPayroll}</p>
-        </Card>
-
-        <Card className="flex flex-col">
-          <div className="flex items-center gap-3 mb-2 text-gray-500">
-            <div className="p-2 bg-danger-50 text-danger-600 rounded-lg"><DollarSign className="w-5 h-5" /></div>
-            <span className="text-[13px] font-medium uppercase tracking-wider">Total Deductions</span>
-          </div>
-          <p className="text-[24px] font-bold text-gray-900 mt-2">₹{totalDeductions.toLocaleString('en-IN')}</p>
-        </Card>
-      </div>
 
       <Card padding="none" className="p-4 flex flex-col md:flex-row gap-4 items-center justify-between border-b-0 rounded-b-none">
         <div className="relative flex-1 w-full max-w-sm">
@@ -110,9 +63,7 @@ export function AdminPayrollPage() {
             <thead>
               <tr>
                 <th className="px-6 py-4 text-[12px] font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 bg-gray-50/50">Employee</th>
-                <th className="px-6 py-4 text-[12px] font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 bg-gray-50/50">Department</th>
                 <th className="px-6 py-4 text-[12px] font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 bg-gray-50/50">Gross</th>
-                <th className="px-6 py-4 text-[12px] font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 bg-gray-50/50">Deductions</th>
                 <th className="px-6 py-4 text-[12px] font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 bg-gray-50/50">Net Salary</th>
                 <th className="px-6 py-4 text-[12px] font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 bg-gray-50/50">Status</th>
                 <th className="px-6 py-4 text-[12px] font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 bg-gray-50/50 text-right">Actions</th>
@@ -121,10 +72,11 @@ export function AdminPayrollPage() {
             <tbody className="divide-y divide-gray-100">
               {payslipRows.map(row => (
                 <tr key={row.employeeId} className="hover:bg-gray-50/50">
-                  <td className="px-6 py-4 text-[14px] font-medium text-gray-900">{row.name}</td>
-                  <td className="px-6 py-4 text-[14px] text-gray-500">{row.department}</td>
+                  <td className="px-6 py-4">
+                    <div className="text-[14px] font-medium text-gray-900">{row.name}</div>
+                    <div className="text-[12px] text-gray-500">{row.department}</div>
+                  </td>
                   <td className="px-6 py-4 text-[14px] text-gray-700">₹{row.payslip ? row.payslip.grossSalary.toLocaleString('en-IN') : row.salaryStructure.gross.toLocaleString('en-IN')}</td>
-                  <td className="px-6 py-4 text-[14px] text-gray-500">₹{row.payslip ? (row.payslip.grossSalary - row.payslip.netSalary).toLocaleString('en-IN') : '—'}</td>
                   <td className="px-6 py-4 text-[14px] font-medium text-gray-900">
                     {row.payslip ? `₹${row.payslip.netSalary.toLocaleString('en-IN')}` : '—'}
                   </td>
@@ -136,8 +88,8 @@ export function AdminPayrollPage() {
                     )}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    {row.payslip && row.payslip.status !== 'Paid' && (
-                      <Button size="sm" onClick={() => markPayslipPaid(row.payslip!.id)}>Mark Paid</Button>
+                    {row.payslip && (
+                      <Button variant="outline" size="sm" icon={<Download className="w-4 h-4" />}>PDF</Button>
                     )}
                   </td>
                 </tr>
