@@ -115,6 +115,36 @@ export interface PerformanceReview {
   status: 'Completed' | 'Pending';
 }
 
+export interface Asset {
+  id: string;
+  employeeId: string;
+  name: string;
+  type: string;
+  assetId: string;
+  condition: string;
+  status: 'Assigned';
+}
+
+export interface AssetIssue {
+  id: string;
+  assetId: string;
+  employeeId: string;
+  issueType: string;
+  description: string;
+  status: 'Pending' | 'Resolved';
+  reportedOn: string;
+}
+
+export interface EmployeeDocument {
+  id: string;
+  employeeId: string;
+  name: string;
+  category: 'Employment' | 'Payroll' | 'Tax' | 'Company' | 'Personal';
+  uploadedOn: string;
+  size: string;
+  status: 'Verified' | 'Pending verification';
+}
+
 export interface AppState {
   employees: StoreEmployee[];
   leaveRequests: LeaveRequest[];
@@ -126,6 +156,9 @@ export interface AppState {
   payslips: Payslip[];
   goals: Goal[];
   reviews: PerformanceReview[];
+  assets: Asset[];
+  assetIssues: AssetIssue[];
+  documents: EmployeeDocument[];
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -203,6 +236,25 @@ const INITIAL_STATE: AppState = {
   reviews: [
     { id: 'rev-1', employeeId: 'emp-1024', period: 'Q3 2026', rating: 'Excellent', status: 'Completed' },
     { id: 'rev-2', employeeId: 'emp-1024', period: 'Q2 2026', rating: 'Good', status: 'Completed' },
+  ],
+  assets: [
+    { id: 'ast-1', employeeId: 'emp-1024', name: 'Dell XPS 15 Laptop', type: 'Laptop', assetId: 'LPT-2024-001', condition: 'Good', status: 'Assigned' },
+    { id: 'ast-2', employeeId: 'emp-1024', name: 'Dell 24" Monitor', type: 'Monitor', assetId: 'MON-2024-042', condition: 'Good', status: 'Assigned' },
+    { id: 'ast-3', employeeId: 'emp-1024', name: 'iPhone 15', type: 'Mobile', assetId: 'MOB-2024-015', condition: 'Excellent', status: 'Assigned' },
+    { id: 'ast-4', employeeId: 'emp-1024', name: 'Logitech Keyboard', type: 'Accessory', assetId: 'ACC-2024-101', condition: 'Good', status: 'Assigned' },
+    { id: 'ast-5', employeeId: 'emp-1024', name: 'Logitech Mouse', type: 'Accessory', assetId: 'ACC-2024-102', condition: 'Fair', status: 'Assigned' },
+    { id: 'ast-6', employeeId: 'emp-1024', name: 'ID Card', type: 'Identification', assetId: 'IDC-1024', condition: 'Good', status: 'Assigned' },
+  ],
+  assetIssues: [],
+  documents: [
+    { id: 'doc-1', employeeId: 'emp-1024', name: 'Offer Letter', category: 'Employment', uploadedOn: '2024-07-01', size: '245 KB', status: 'Verified' },
+    { id: 'doc-2', employeeId: 'emp-1024', name: 'Employment Contract', category: 'Employment', uploadedOn: '2024-07-12', size: '1.2 MB', status: 'Verified' },
+    { id: 'doc-3', employeeId: 'emp-1024', name: 'PAN Card', category: 'Personal', uploadedOn: '2024-07-12', size: '450 KB', status: 'Verified' },
+    { id: 'doc-4', employeeId: 'emp-1024', name: 'Aadhaar Card', category: 'Personal', uploadedOn: '2024-07-12', size: '800 KB', status: 'Verified' },
+    { id: 'doc-5', employeeId: 'emp-1024', name: 'Salary Slip Oct 2026', category: 'Payroll', uploadedOn: '2026-10-31', size: '150 KB', status: 'Verified' },
+    { id: 'doc-6', employeeId: 'emp-1024', name: 'Form 16 2025', category: 'Tax', uploadedOn: '2026-05-15', size: '2.1 MB', status: 'Verified' },
+    { id: 'doc-7', employeeId: 'emp-1024', name: 'Company Policy', category: 'Company', uploadedOn: '2025-01-01', size: '3.4 MB', status: 'Verified' },
+    { id: 'doc-8', employeeId: 'emp-1024', name: 'Experience Certificate', category: 'Employment', uploadedOn: '2024-07-10', size: '500 KB', status: 'Verified' },
   ]
 };
 
@@ -221,6 +273,9 @@ interface AppStoreContextType {
   checkIn: (employeeId: string) => void;
   checkOut: (employeeId: string) => void;
   requestAttendanceCorrection: (req: Omit<AttendanceCorrection, 'id' | 'status' | 'appliedOn'>) => void;
+  // Assets & Documents
+  reportAssetIssue: (req: Omit<AssetIssue, 'id' | 'status' | 'reportedOn'>) => void;
+  uploadDocument: (doc: Omit<EmployeeDocument, 'id' | 'uploadedOn' | 'status'>) => void;
   // Announcement actions
   addAnnouncement: (ann: Omit<Announcement, 'id'>) => void;
   // Notification actions
@@ -234,6 +289,8 @@ interface AppStoreContextType {
   getPayslipsByEmployee: (employeeId: string) => Payslip[];
   getGoalsByEmployee: (employeeId: string) => Goal[];
   getReviewsByEmployee: (employeeId: string) => PerformanceReview[];
+  getAssetsByEmployee: (employeeId: string) => Asset[];
+  getDocumentsByEmployee: (employeeId: string) => EmployeeDocument[];
   getNotificationsForUser: (userId: string) => AppNotification[];
   getUnreadCount: (userId: string) => number;
   getLeaveBalance: (employeeId: string) => LeaveBalance | undefined;
@@ -350,6 +407,27 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     setState(s => ({ ...s, attendanceCorrections: [newReq, ...s.attendanceCorrections], notifications: [newNotif, ...s.notifications] }));
   }, []);
 
+  // ── Assets & Documents ──
+  const reportAssetIssue = useCallback((req: Omit<AssetIssue, 'id' | 'status' | 'reportedOn'>) => {
+    const newReq: AssetIssue = { ...req, id: `iss-${genId()}`, status: 'Pending', reportedOn: new Date().toISOString().split('T')[0] };
+    const newNotif: AppNotification = {
+      id: `notif-${genId()}`, targetUserId: 'admin', title: 'New Asset Issue Reported',
+      message: `Employee ${req.employeeId} reported an issue with asset ${req.assetId}`,
+      time: now(), read: false, type: 'attendance', // reusing attendance icon/type for now
+    };
+    setState(s => ({ ...s, assetIssues: [newReq, ...s.assetIssues], notifications: [newNotif, ...s.notifications] }));
+  }, []);
+
+  const uploadDocument = useCallback((doc: Omit<EmployeeDocument, 'id' | 'uploadedOn' | 'status'>) => {
+    const newDoc: EmployeeDocument = { ...doc, id: `doc-${genId()}`, uploadedOn: new Date().toISOString().split('T')[0], status: 'Pending verification' };
+    const newNotif: AppNotification = {
+      id: `notif-${genId()}`, targetUserId: 'admin', title: 'New Document Uploaded',
+      message: `Employee ${doc.employeeId} uploaded a new document for verification`,
+      time: now(), read: false, type: 'leave', // reusing leave icon/type for now
+    };
+    setState(s => ({ ...s, documents: [newDoc, ...s.documents], notifications: [newNotif, ...s.notifications] }));
+  }, []);
+
   // ── Announcements ──
   const addAnnouncement = useCallback((ann: Omit<Announcement, 'id'>) => {
     const newAnn: Announcement = { ...ann, id: `ann-${genId()}` };
@@ -377,6 +455,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const getPayslipsByEmployee = useCallback((employeeId: string) => (state.payslips || []).filter(p => p.employeeId === employeeId), [state.payslips]);
   const getGoalsByEmployee = useCallback((employeeId: string) => (state.goals || []).filter(g => g.employeeId === employeeId), [state.goals]);
   const getReviewsByEmployee = useCallback((employeeId: string) => (state.reviews || []).filter(r => r.employeeId === employeeId), [state.reviews]);
+  const getAssetsByEmployee = useCallback((employeeId: string) => (state.assets || []).filter(a => a.employeeId === employeeId), [state.assets]);
+  const getDocumentsByEmployee = useCallback((employeeId: string) => (state.documents || []).filter(d => d.employeeId === employeeId), [state.documents]);
   const getNotificationsForUser = useCallback((userId: string) => (state.notifications || []).filter(n => n.targetUserId === userId || n.targetUserId === 'all' || (userId !== 'employee' && n.targetUserId === 'admin')), [state.notifications]);
   const getUnreadCount = useCallback((userId: string) => {
     return (state.notifications || []).filter(n => !n.read && (n.targetUserId === userId || n.targetUserId === 'all' || (userId !== 'employee' && n.targetUserId === 'admin'))).length;
@@ -386,9 +466,11 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   return (
     <AppStoreContext.Provider value={{
       state, updateEmployee, submitLeave, approveLeave, rejectLeave,
-      checkIn, checkOut, requestAttendanceCorrection, addAnnouncement, addNotification, markNotificationRead,
+      checkIn, checkOut, requestAttendanceCorrection, reportAssetIssue, uploadDocument,
+      addAnnouncement, addNotification, markNotificationRead,
       getEmployee, getLeavesByEmployee, getPendingLeaves, getAttendanceByEmployee,
       getPayslipsByEmployee, getGoalsByEmployee, getReviewsByEmployee,
+      getAssetsByEmployee, getDocumentsByEmployee,
       getNotificationsForUser, getUnreadCount, getLeaveBalance,
     }}>
       {children}

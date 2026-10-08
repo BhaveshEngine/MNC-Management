@@ -16,6 +16,8 @@ import { EmployeeProfilePage as MyProfilePage } from '@/pages/employee/EmployeeP
 import { EmployeeAttendancePage } from '@/pages/employee/EmployeeAttendancePage';
 import { EmployeePayrollPage } from '@/pages/employee/EmployeePayrollPage';
 import { EmployeePerformancePage } from '@/pages/employee/EmployeePerformancePage';
+import { EmployeeAssetsPage } from '@/pages/employee/EmployeeAssetsPage';
+import { EmployeeDocumentsPage } from '@/pages/employee/EmployeeDocumentsPage';
 import { Construction } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
@@ -105,8 +107,8 @@ function EmployeeLayout() {
               <Route path="leave" element={<EmployeeLeavePage />} />
               <Route path="payroll" element={<EmployeePayrollPage />} />
               <Route path="performance" element={<EmployeePerformancePage />} />
-              <Route path="assets" element={<Placeholder title="My Assets" />} />
-              <Route path="documents" element={<Placeholder title="My Documents" />} />
+              <Route path="assets" element={<EmployeeAssetsPage />} />
+              <Route path="documents" element={<EmployeeDocumentsPage />} />
               <Route path="directory" element={<Placeholder title="Employee Directory" />} />
               <Route path="announcements" element={<Placeholder title="Announcements" />} />
               <Route path="requests" element={<Placeholder title="Requests" />} />
