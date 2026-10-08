@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Bell, Moon, LogOut, ChevronDown, Settings, User } from 'lucide-react';
+import { Search, Bell, Moon, Sun, LogOut, ChevronDown, Settings, User } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppStore } from '@/store/AppStore';
@@ -16,6 +16,16 @@ export function Header() {
   
   const dropdownRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
+
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    if (newTheme === 'dark') document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
+  };
 
   const userId = user?.role === 'employee' ? 'emp-1024' : 'admin';
   const notifications = getNotificationsForUser(userId).slice(0, 5);
@@ -69,10 +79,11 @@ export function Header() {
       <div className="flex items-center gap-2">
         {/* Theme toggle */}
         <button
+          onClick={toggleTheme}
           className="w-9 h-9 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
           aria-label="Toggle theme"
         >
-          <Moon className="w-[18px] h-[18px]" />
+          {theme === 'dark' ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
         </button>
 
         {/* Notifications */}

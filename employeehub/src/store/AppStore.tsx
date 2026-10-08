@@ -145,6 +145,17 @@ export interface EmployeeDocument {
   status: 'Verified' | 'Pending verification';
 }
 
+export interface GeneralRequest {
+  id: string;
+  employeeId: string;
+  category: 'IT Support' | 'HR Query' | 'Facilities' | 'Other';
+  subject: string;
+  description: string;
+  priority: 'High' | 'Medium' | 'Low';
+  status: 'Pending' | 'In Progress' | 'Resolved' | 'Rejected' | 'Cancelled';
+  submittedOn: string;
+}
+
 export interface AppState {
   employees: StoreEmployee[];
   leaveRequests: LeaveRequest[];
@@ -159,6 +170,7 @@ export interface AppState {
   assets: Asset[];
   assetIssues: AssetIssue[];
   documents: EmployeeDocument[];
+  generalRequests: GeneralRequest[];
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -263,6 +275,10 @@ const INITIAL_STATE: AppState = {
     { id: 'doc-6', employeeId: 'emp-1024', name: 'Form 16 2025', category: 'Tax', uploadedOn: '2026-05-15', size: '2.1 MB', status: 'Verified' },
     { id: 'doc-7', employeeId: 'emp-1024', name: 'Company Policy', category: 'Company', uploadedOn: '2025-01-01', size: '3.4 MB', status: 'Verified' },
     { id: 'doc-8', employeeId: 'emp-1024', name: 'Experience Certificate', category: 'Employment', uploadedOn: '2024-07-10', size: '500 KB', status: 'Verified' },
+  ],
+  generalRequests: [
+    { id: 'req-1', employeeId: 'emp-1024', category: 'IT Support', subject: 'VPN Access Issue', description: 'Cannot connect to company VPN from home network.', priority: 'Medium', status: 'Resolved', submittedOn: '2026-09-01' },
+    { id: 'req-2', employeeId: 'emp-1024', category: 'HR Query', subject: 'Tax Declaration Form', description: 'Need clarification on section 80C limits.', priority: 'Low', status: 'Pending', submittedOn: '2026-10-06' }
   ]
 };
 
@@ -284,6 +300,9 @@ interface AppStoreContextType {
   // Assets & Documents
   reportAssetIssue: (req: Omit<AssetIssue, 'id' | 'status' | 'reportedOn'>) => void;
   uploadDocument: (doc: Omit<EmployeeDocument, 'id' | 'uploadedOn' | 'status'>) => void;
+  // General Requests
+  submitGeneralRequest: (req: Omit<GeneralRequest, 'id' | 'status' | 'submittedOn'>) => void;
+  cancelRequest: (type: 'leave' | 'attendance' | 'asset' | 'general', id: string) => void;
   // Announcement actions
   addAnnouncement: (ann: Omit<Announcement, 'id'>) => void;
   // Notification actions
@@ -300,6 +319,9 @@ interface AppStoreContextType {
   getReviewsByEmployee: (employeeId: string) => PerformanceReview[];
   getAssetsByEmployee: (employeeId: string) => Asset[];
   getDocumentsByEmployee: (employeeId: string) => EmployeeDocument[];
+  getGeneralRequestsByEmployee: (employeeId: string) => GeneralRequest[];
+  getAssetIssuesByEmployee: (employeeId: string) => AssetIssue[];
+  getAttendanceCorrectionsByEmployee: (employeeId: string) => AttendanceCorrection[];
   getNotificationsForUser: (userId: string) => AppNotification[];
   getUnreadCount: (userId: string) => number;
   getLeaveBalance: (employeeId: string) => LeaveBalance | undefined;
@@ -437,6 +459,27 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     setState(s => ({ ...s, documents: [newDoc, ...s.documents], notifications: [newNotif, ...s.notifications] }));
   }, []);
 
+  // ── General Requests & Cancellation ──
+  const submitGeneralRequest = useCallback((req: Omit<GeneralRequest, 'id' | 'status' | 'submittedOn'>) => {
+    const newReq: GeneralRequest = { ...req, id: `req-${genId()}`, status: 'Pending', submittedOn: new Date().toISOString().split('T')[0] };
+    const newNotif: AppNotification = {
+      id: `notif-${genId()}`, targetUserId: 'admin', title: 'New Request Submitted',
+      message: `Employee ${req.employeeId} submitted a new ${req.category} request`,
+      time: now(), read: false, type: 'announcement',
+    };
+    setState(s => ({ ...s, generalRequests: [newReq, ...(s.generalRequests || [])], notifications: [newNotif, ...s.notifications] }));
+  }, []);
+
+  const cancelRequest = useCallback((type: 'leave' | 'attendance' | 'asset' | 'general', id: string) => {
+    setState(s => {
+      if (type === 'leave') return { ...s, leaveRequests: s.leaveRequests.map(r => r.id === id ? { ...r, status: 'Cancelled' as any } : r) };
+      if (type === 'attendance') return { ...s, attendanceCorrections: s.attendanceCorrections.map(r => r.id === id ? { ...r, status: 'Cancelled' as any } : r) };
+      if (type === 'asset') return { ...s, assetIssues: s.assetIssues.map(r => r.id === id ? { ...r, status: 'Cancelled' as any } : r) };
+      if (type === 'general') return { ...s, generalRequests: s.generalRequests.map(r => r.id === id ? { ...r, status: 'Cancelled' as any } : r) };
+      return s;
+    });
+  }, []);
+
   // ── Announcements ──
   const addAnnouncement = useCallback((ann: Omit<Announcement, 'id'>) => {
     const newAnn: Announcement = { ...ann, id: `ann-${genId()}` };
@@ -475,6 +518,9 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const getReviewsByEmployee = useCallback((employeeId: string) => (state.reviews || []).filter(r => r.employeeId === employeeId), [state.reviews]);
   const getAssetsByEmployee = useCallback((employeeId: string) => (state.assets || []).filter(a => a.employeeId === employeeId), [state.assets]);
   const getDocumentsByEmployee = useCallback((employeeId: string) => (state.documents || []).filter(d => d.employeeId === employeeId), [state.documents]);
+  const getGeneralRequestsByEmployee = useCallback((employeeId: string) => (state.generalRequests || []).filter(r => r.employeeId === employeeId), [state.generalRequests]);
+  const getAssetIssuesByEmployee = useCallback((employeeId: string) => (state.assetIssues || []).filter(i => i.employeeId === employeeId), [state.assetIssues]);
+  const getAttendanceCorrectionsByEmployee = useCallback((employeeId: string) => (state.attendanceCorrections || []).filter(c => c.employeeId === employeeId), [state.attendanceCorrections]);
   const getNotificationsForUser = useCallback((userId: string) => (state.notifications || []).filter(n => n.targetUserId === userId || n.targetUserId === 'all' || (userId !== 'employee' && n.targetUserId === 'admin')), [state.notifications]);
   const getUnreadCount = useCallback((userId: string) => {
     return (state.notifications || []).filter(n => !n.read && (n.targetUserId === userId || n.targetUserId === 'all' || (userId !== 'employee' && n.targetUserId === 'admin'))).length;
@@ -485,10 +531,12 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     <AppStoreContext.Provider value={{
       state, updateEmployee, submitLeave, approveLeave, rejectLeave,
       checkIn, checkOut, requestAttendanceCorrection, reportAssetIssue, uploadDocument,
+      submitGeneralRequest, cancelRequest,
       addAnnouncement, addNotification, markNotificationRead, markAllNotificationsRead,
       getEmployee, getLeavesByEmployee, getPendingLeaves, getAttendanceByEmployee,
       getPayslipsByEmployee, getGoalsByEmployee, getReviewsByEmployee,
       getAssetsByEmployee, getDocumentsByEmployee,
+      getGeneralRequestsByEmployee, getAssetIssuesByEmployee, getAttendanceCorrectionsByEmployee,
       getNotificationsForUser, getUnreadCount, getLeaveBalance,
     }}>
       {children}

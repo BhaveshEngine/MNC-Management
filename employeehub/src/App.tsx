@@ -21,6 +21,9 @@ import { EmployeeDocumentsPage } from '@/pages/employee/EmployeeDocumentsPage';
 import { EmployeeDirectoryPage } from '@/pages/employee/EmployeeDirectoryPage';
 import { EmployeeAnnouncementsPage } from '@/pages/employee/EmployeeAnnouncementsPage';
 import { EmployeeNotificationsPage } from '@/pages/employee/EmployeeNotificationsPage';
+import { EmployeeRequestsPage } from '@/pages/employee/EmployeeRequestsPage';
+import { EmployeeHelpPage } from '@/pages/employee/EmployeeHelpPage';
+import { EmployeeSettingsPage } from '@/pages/employee/EmployeeSettingsPage';
 import { Construction } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
@@ -115,9 +118,9 @@ function EmployeeLayout() {
               <Route path="directory" element={<EmployeeDirectoryPage />} />
               <Route path="announcements" element={<EmployeeAnnouncementsPage />} />
               <Route path="notifications" element={<EmployeeNotificationsPage />} />
-              <Route path="requests" element={<Placeholder title="Requests" />} />
-              <Route path="help" element={<Placeholder title="Help & Support" />} />
-              <Route path="settings" element={<Placeholder title="Settings" />} />
+              <Route path="requests" element={<EmployeeRequestsPage />} />
+              <Route path="help" element={<EmployeeHelpPage />} />
+              <Route path="settings" element={<EmployeeSettingsPage />} />
               <Route path="*" element={<Navigate to="dashboard" replace />} />
             </Routes>
           </ErrorBoundary>
