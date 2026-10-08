@@ -179,7 +179,7 @@ const INITIAL_STATE: AppState = {
       city: 'Jaipur',
       state: 'Rajasthan',
       department: 'Engineering',
-      designation: 'Software Engineer',
+      designation: 'Senior Developer',
       managerName: 'Ankit Verma',
       joiningDate: '2024-07-12',
       employmentType: 'Full-time',
@@ -188,7 +188,14 @@ const INITIAL_STATE: AppState = {
       status: 'Active',
       skills: ['React', 'TypeScript', 'Node.js'],
       education: 'B.Tech in Computer Science, MNIT Jaipur (2013-2017)'
-    }
+    },
+    { id: 'emp-3', employeeId: 'EMP-1026', firstName: 'Aditi', lastName: 'Chauhan', email: 'aditi.chauhan@mnc.com', phone: '+91 98765 22222', designation: 'Brand Manager', department: 'Marketing', dateOfBirth: '1990-11-10', gender: 'Female', joiningDate: '2021-06-15', workLocation: 'Delhi Office', managerName: 'CMO', employmentType: 'Full-time', address: '78 Market Street', city: 'New Delhi', state: 'Delhi', salary: 950000, status: 'Active' },
+    { id: 'emp-2', employeeId: 'EMP-1025', firstName: 'Ankit', lastName: 'Verma', email: 'ankit.verma@mnc.com', phone: '+91 98765 11111', designation: 'Engineering Manager', department: 'Engineering', dateOfBirth: '1988-08-20', gender: 'Male', joiningDate: '2020-03-01', workLocation: 'Jaipur Office', managerName: 'CTO', employmentType: 'Full-time', address: '45 IT City', city: 'Jaipur', state: 'Rajasthan', salary: 1200000, status: 'Active' },
+    { id: 'emp-4', employeeId: 'EMP-1027', firstName: 'Neha', lastName: 'Singh', email: 'neha.singh@mnc.com', phone: '+91 98765 33333', designation: 'Product Manager', department: 'Product', dateOfBirth: '1991-02-25', gender: 'Female', joiningDate: '2022-01-10', workLocation: 'Bengaluru HQ', managerName: 'CPO', employmentType: 'Full-time', address: '12 Product Park', city: 'Bengaluru', state: 'Karnataka', salary: 1100000, status: 'Active' },
+    { id: 'emp-5', employeeId: 'EMP-1028', firstName: 'Amit', lastName: 'Kumar', email: 'amit.kumar@mnc.com', phone: '+91 98765 44444', designation: 'HR Manager', department: 'Human Resources', dateOfBirth: '1987-09-05', gender: 'Male', joiningDate: '2019-11-20', workLocation: 'Noida Office', managerName: 'CHRO', employmentType: 'Full-time', address: '55 HR Avenue', city: 'Noida', state: 'UP', salary: 900000, status: 'Active' },
+    { id: 'emp-6', employeeId: 'EMP-1029', firstName: 'Priya', lastName: 'Mehta', email: 'priya.mehta@mnc.com', phone: '+91 98765 55555', designation: 'Finance Manager', department: 'Finance', dateOfBirth: '1989-12-12', gender: 'Female', joiningDate: '2021-04-01', workLocation: 'Mumbai Office', managerName: 'CFO', employmentType: 'Full-time', address: '99 Finance Hub', city: 'Mumbai', state: 'Maharashtra', salary: 1050000, status: 'Active' },
+    { id: 'emp-7', employeeId: 'EMP-1030', firstName: 'Sneha', lastName: 'Patel', email: 'sneha.patel@mnc.com', phone: '+91 98765 66666', designation: 'Operations Manager', department: 'Operations', dateOfBirth: '1993-07-22', gender: 'Female', joiningDate: '2023-02-15', workLocation: 'Pune Office', managerName: 'COO', employmentType: 'Full-time', address: '33 Ops Center', city: 'Pune', state: 'Maharashtra', salary: 850000, status: 'Active' },
+    { id: 'emp-8', employeeId: 'EMP-1031', firstName: 'Karthik', lastName: 'Nair', email: 'karthik.nair@mnc.com', phone: '+91 98765 77777', designation: 'Sales Manager', department: 'Sales', dateOfBirth: '1986-04-30', gender: 'Male', joiningDate: '2018-10-10', workLocation: 'Hyderabad Office', managerName: 'CSO', employmentType: 'Full-time', address: '22 Sales Tower', city: 'Hyderabad', state: 'Telangana', salary: 1000000, status: 'Active' },
   ],
   leaveRequests: [
     { id: 'lv-1', employeeId: 'emp-1024', employeeName: 'Rahul Sharma', type: 'Annual Leave', startDate: '2026-09-20', endDate: '2026-09-20', days: 1, reason: 'Personal work', status: 'Approved', appliedOn: '2026-09-15', reviewedBy: 'Admin', reviewedOn: '2026-09-16' },
@@ -216,6 +223,7 @@ const INITIAL_STATE: AppState = {
     { id: 'notif-1', targetUserId: 'emp-1024', title: 'Leave Approved', message: 'Your annual leave on Sep 20 was approved.', time: '2026-10-08T09:00:00', read: false, type: 'leave' },
     { id: 'notif-2', targetUserId: 'emp-1024', title: 'Payslip Available', message: 'September 2026 payslip is ready.', time: '2026-10-07T10:00:00', read: false, type: 'payroll' },
     { id: 'notif-3', targetUserId: 'all', title: 'Diwali Office Closure', message: 'Office closed Oct 31–Nov 3.', time: '2026-10-01T08:00:00', read: true, type: 'announcement' },
+    { id: 'notif-4', targetUserId: 'emp-1024', title: 'Attendance Corrected', message: 'Your attendance correction for Oct 5 was approved.', time: '2026-10-08T11:30:00', read: false, type: 'attendance' },
   ],
   leaveBalances: [
     { employeeId: 'emp-1024', annual: { total: 14, used: 3 }, sick: { total: 8, used: 2 }, casual: { total: 5, used: 1 } },
@@ -281,6 +289,7 @@ interface AppStoreContextType {
   // Notification actions
   addNotification: (notif: Omit<AppNotification, 'id'>) => void;
   markNotificationRead: (id: string) => void;
+  markAllNotificationsRead: (userId: string) => void;
   // Getters
   getEmployee: (id: string) => StoreEmployee | undefined;
   getLeavesByEmployee: (employeeId: string) => LeaveRequest[];
@@ -447,6 +456,15 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     setState(s => ({ ...s, notifications: s.notifications.map(n => n.id === id ? { ...n, read: true } : n) }));
   }, []);
 
+  const markAllNotificationsRead = useCallback((userId: string) => {
+    setState(s => ({
+      ...s,
+      notifications: s.notifications.map(n => 
+        (n.targetUserId === userId || n.targetUserId === 'all') ? { ...n, read: true } : n
+      )
+    }));
+  }, []);
+
   // ── Getters ──
   const getEmployee = useCallback((id: string) => (state.employees || []).find(e => e.id === id), [state.employees]);
   const getLeavesByEmployee = useCallback((employeeId: string) => (state.leaveRequests || []).filter(l => l.employeeId === employeeId), [state.leaveRequests]);
@@ -467,7 +485,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     <AppStoreContext.Provider value={{
       state, updateEmployee, submitLeave, approveLeave, rejectLeave,
       checkIn, checkOut, requestAttendanceCorrection, reportAssetIssue, uploadDocument,
-      addAnnouncement, addNotification, markNotificationRead,
+      addAnnouncement, addNotification, markNotificationRead, markAllNotificationsRead,
       getEmployee, getLeavesByEmployee, getPendingLeaves, getAttendanceByEmployee,
       getPayslipsByEmployee, getGoalsByEmployee, getReviewsByEmployee,
       getAssetsByEmployee, getDocumentsByEmployee,

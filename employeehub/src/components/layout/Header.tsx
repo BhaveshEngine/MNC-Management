@@ -2,24 +2,38 @@ import { useState, useEffect, useRef } from 'react';
 import { Search, Bell, Moon, LogOut, ChevronDown, Settings, User } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAppStore } from '@/store/AppStore';
 import { getCurrentTime, cn } from '@/lib/utils';
+import { Link, useNavigate } from 'react-router-dom';
 
 export function Header() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const { getNotificationsForUser, getUnreadCount, markNotificationRead } = useAppStore();
   const [time, setTime] = useState(getCurrentTime());
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  const userId = user?.role === 'employee' ? 'emp-1024' : 'admin';
+  const notifications = getNotificationsForUser(userId).slice(0, 5);
+  const unreadCount = getUnreadCount(userId);
 
   useEffect(() => {
     const interval = setInterval(() => setTime(getCurrentTime()), 30000);
     return () => clearInterval(interval);
   }, []);
 
-  // Close dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setDropdownOpen(false);
+      }
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -62,13 +76,64 @@ export function Header() {
         </button>
 
         {/* Notifications */}
-        <button
-          className="relative w-9 h-9 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-          aria-label="Notifications"
-        >
-          <Bell className="w-[18px] h-[18px]" />
-          <span className="absolute top-2 right-2 w-[7px] h-[7px] bg-danger-500 rounded-full ring-2 ring-white" />
-        </button>
+        <div className="relative" ref={notifRef}>
+          <button
+            onClick={() => setNotifOpen(!notifOpen)}
+            className="relative w-9 h-9 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            aria-label="Notifications"
+          >
+            <Bell className="w-[18px] h-[18px]" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-[8px] h-[8px] bg-danger-500 rounded-full ring-2 ring-white" />
+            )}
+          </button>
+
+          {notifOpen && (
+            <div className="absolute right-0 top-[calc(100%+4px)] w-[320px] bg-white rounded-xl border border-gray-200 shadow-xl py-2 animate-fade z-50">
+              <div className="px-4 py-2 border-b border-gray-100 flex justify-between items-center">
+                <p className="text-[14px] font-bold text-gray-900">Notifications</p>
+                {unreadCount > 0 && (
+                  <span className="px-2 py-0.5 rounded-full bg-brand-100 text-brand-700 text-[11px] font-bold">
+                    {unreadCount} New
+                  </span>
+                )}
+              </div>
+              <div className="max-h-[300px] overflow-y-auto">
+                {notifications.length === 0 ? (
+                  <div className="px-4 py-6 text-center text-gray-500 text-[13px]">No notifications.</div>
+                ) : (
+                  notifications.map(notif => (
+                    <div 
+                      key={notif.id} 
+                      className={cn("px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0", !notif.read && "bg-brand-50/30")}
+                      onClick={() => {
+                        if (!notif.read) markNotificationRead(notif.id);
+                      }}
+                    >
+                      <p className={cn("text-[13px] line-clamp-2", !notif.read ? "font-bold text-gray-900" : "text-gray-700")}>
+                        {notif.title}
+                      </p>
+                      <p className="text-[11px] text-gray-500 mt-1">
+                        {new Date(notif.time).toLocaleDateString()}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="px-4 pt-2 border-t border-gray-100 text-center">
+                <button 
+                  onClick={() => {
+                    setNotifOpen(false);
+                    navigate(user?.role === 'employee' ? '/employee/notifications' : '/dashboard');
+                  }}
+                  className="text-[12px] font-semibold text-brand-600 hover:text-brand-700 w-full py-1"
+                >
+                  View All Notifications
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Divider */}
         <div className="w-px h-7 bg-gray-200 mx-2" />
