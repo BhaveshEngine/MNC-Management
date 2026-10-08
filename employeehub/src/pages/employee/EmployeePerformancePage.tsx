@@ -12,6 +12,18 @@ export function EmployeePerformancePage() {
   const { getGoalsByEmployee, getReviewsByEmployee } = useAppStore();
   const goals = getGoalsByEmployee(currentEmployee.id);
   const reviews = getReviewsByEmployee(currentEmployee.id);
+  
+  const completedGoals = goals.filter(g => g.status === 'Completed').length;
+  const onTrackGoals = goals.filter(g => g.status === 'On Track').length;
+  
+  // Calculate dynamic metrics
+  const avgRating = reviews.length ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) : 'N/A';
+  const performanceScore = reviews.length ? Math.round((parseFloat(avgRating) / 5) * 100) : 0;
+  let ratingText = 'N/A';
+  if (parseFloat(avgRating) >= 4.5) ratingText = 'Excellent';
+  else if (parseFloat(avgRating) >= 3.5) ratingText = 'Good';
+  else if (parseFloat(avgRating) >= 2.5) ratingText = 'Average';
+  else if (reviews.length > 0) ratingText = 'Needs Improvement';
 
   const [showReviewModal, setShowReviewModal] = useState<string | null>(null);
 
@@ -48,7 +60,7 @@ export function EmployeePerformancePage() {
             </div>
             <span className="text-[13px] font-medium uppercase tracking-wider">Performance Score</span>
           </div>
-          <p className="text-[28px] font-bold text-gray-900 mt-2">92%</p>
+          <p className="text-[28px] font-bold text-gray-900 mt-2">{performanceScore}%</p>
         </Card>
         
         <Card className="flex flex-col">
@@ -58,7 +70,7 @@ export function EmployeePerformancePage() {
             </div>
             <span className="text-[13px] font-medium uppercase tracking-wider">Rating</span>
           </div>
-          <p className="text-[28px] font-bold text-gray-900 mt-2">Excellent</p>
+          <p className="text-[28px] font-bold text-gray-900 mt-2">{ratingText}</p>
         </Card>
 
         <Card className="flex flex-col">
@@ -78,7 +90,7 @@ export function EmployeePerformancePage() {
             </div>
             <span className="text-[13px] font-medium uppercase tracking-wider">Manager Rating</span>
           </div>
-          <p className="text-[28px] font-bold text-gray-900 mt-2">4.6<span className="text-gray-400 text-lg">/5</span></p>
+          <p className="text-[28px] font-bold text-gray-900 mt-2">{avgRating}<span className="text-gray-400 text-lg">/5</span></p>
         </Card>
       </div>
 

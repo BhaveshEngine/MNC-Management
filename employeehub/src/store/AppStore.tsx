@@ -95,7 +95,22 @@ export interface Payslip {
   month: string;
   grossSalary: number;
   netSalary: number;
-  status: 'Paid' | 'Pending';
+  deductions: number;
+  status: 'Paid' | 'Pending' | 'Processed' | 'Draft';
+}
+
+export interface SalaryComponent {
+  name: string;
+  value: number;
+  percentage?: string;
+  type: 'earning' | 'deduction';
+}
+
+export interface SalaryStructure {
+  employeeId: string;
+  gross: number;
+  net: number;
+  components: SalaryComponent[];
 }
 
 export interface Goal {
@@ -111,7 +126,8 @@ export interface PerformanceReview {
   id: string;
   employeeId: string;
   period: string;
-  rating: string;
+  rating: number; // 1-5
+  feedback: string;
   status: 'Completed' | 'Pending';
 }
 
@@ -164,6 +180,7 @@ export interface AppState {
   announcements: Announcement[];
   notifications: AppNotification[];
   leaveBalances: LeaveBalance[];
+  salaryStructures: SalaryStructure[];
   payslips: Payslip[];
   goals: Goal[];
   reviews: PerformanceReview[];
@@ -241,10 +258,26 @@ const INITIAL_STATE: AppState = {
     { employeeId: 'emp-1024', annual: { total: 14, used: 3 }, sick: { total: 8, used: 2 }, casual: { total: 5, used: 1 } },
     { employeeId: 'emp-2', annual: { total: 14, used: 5 }, sick: { total: 8, used: 1 }, casual: { total: 5, used: 2 } },
   ],
+  salaryStructures: [
+    {
+      employeeId: 'emp-1024',
+      gross: 65000,
+      net: 58450,
+      components: [
+        { name: 'Basic', value: 32500, percentage: '50%', type: 'earning' },
+        { name: 'HRA', value: 13000, percentage: '20%', type: 'earning' },
+        { name: 'Special Allowance', value: 7800, percentage: '12%', type: 'earning' },
+        { name: 'Other Allowances', value: 6500, percentage: '10%', type: 'earning' },
+        { name: 'PF', value: 1950, percentage: '3%', type: 'deduction' },
+        { name: 'Professional Tax', value: 200, type: 'deduction' },
+        { name: 'Income Tax', value: 2100, percentage: '3%', type: 'deduction' },
+      ]
+    }
+  ],
   payslips: [
-    { id: 'ps-1', employeeId: 'emp-1024', month: 'September 2026', grossSalary: 65000, netSalary: 58450, status: 'Paid' },
-    { id: 'ps-2', employeeId: 'emp-1024', month: 'August 2026', grossSalary: 65000, netSalary: 58450, status: 'Paid' },
-    { id: 'ps-3', employeeId: 'emp-1024', month: 'July 2026', grossSalary: 65000, netSalary: 58450, status: 'Paid' },
+    { id: 'ps-1', employeeId: 'emp-1024', month: 'September 2026', grossSalary: 65000, netSalary: 58450, deductions: 6550, status: 'Paid' },
+    { id: 'ps-2', employeeId: 'emp-1024', month: 'August 2026', grossSalary: 65000, netSalary: 58450, deductions: 6550, status: 'Paid' },
+    { id: 'ps-3', employeeId: 'emp-1024', month: 'July 2026', grossSalary: 65000, netSalary: 58450, deductions: 6550, status: 'Paid' },
   ],
   goals: [
     { id: 'g-1', employeeId: 'emp-1024', title: 'Launch Employee Portal MVP', progress: 100, deadline: '2026-10-01', status: 'Completed' },
@@ -254,8 +287,8 @@ const INITIAL_STATE: AppState = {
     { id: 'g-5', employeeId: 'emp-1024', title: 'Migrate to React 19', progress: 100, deadline: '2026-08-30', status: 'Completed' },
   ],
   reviews: [
-    { id: 'rev-1', employeeId: 'emp-1024', period: 'Q3 2026', rating: 'Excellent', status: 'Completed' },
-    { id: 'rev-2', employeeId: 'emp-1024', period: 'Q2 2026', rating: 'Good', status: 'Completed' },
+    { id: 'rev-1', employeeId: 'emp-1024', period: 'Q3 2026', rating: 4.6, feedback: 'Excellent work on the portal MVP. Keep it up!', status: 'Completed' },
+    { id: 'rev-2', employeeId: 'emp-1024', period: 'Q2 2026', rating: 4.0, feedback: 'Good progress. Needs to focus on test coverage.', status: 'Completed' },
   ],
   assets: [
     { id: 'ast-1', employeeId: 'emp-1024', name: 'Dell XPS 15 Laptop', type: 'Laptop', assetId: 'LPT-2024-001', condition: 'Good', status: 'Assigned' },
@@ -328,6 +361,15 @@ interface AppStoreContextType {
   getUnreadCount: (userId: string) => number;
   getLeaveBalance: (employeeId: string) => LeaveBalance | undefined;
   updateLeaveBalance: (employeeId: string, typeKey: 'annual' | 'sick' | 'casual', total: number, used: number) => void;
+  // Payroll & Performance
+  getSalaryStructure: (employeeId: string) => SalaryStructure | undefined;
+  updateSalaryStructure: (employeeId: string, components: SalaryComponent[]) => void;
+  generatePayroll: (month: string, adminName: string) => void;
+  markPayslipPaid: (payslipId: string) => void;
+  addGoal: (goal: Omit<Goal, 'id'>) => void;
+  updateGoal: (id: string, updates: Partial<Goal>) => void;
+  addReview: (review: Omit<PerformanceReview, 'id'>) => void;
+  updateReview: (id: string, updates: Partial<PerformanceReview>) => void;
 }
 
 const AppStoreContext = createContext<AppStoreContextType | null>(null);
@@ -579,6 +621,93 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  // ── Payroll & Performance ──
+  const getSalaryStructure = useCallback((employeeId: string) => (state.salaryStructures || []).find(s => s.employeeId === employeeId), [state.salaryStructures]);
+
+  const updateSalaryStructure = useCallback((employeeId: string, components: SalaryComponent[]) => {
+    const gross = components.filter(c => c.type === 'earning').reduce((acc, c) => acc + c.value, 0);
+    const deductions = components.filter(c => c.type === 'deduction').reduce((acc, c) => acc + c.value, 0);
+    const net = gross - deductions;
+    setState(s => {
+      const existing = (s.salaryStructures || []).find(st => st.employeeId === employeeId);
+      const updatedStructures = existing
+        ? s.salaryStructures.map(st => st.employeeId === employeeId ? { ...st, components, gross, net } : st)
+        : [...(s.salaryStructures || []), { employeeId, gross, net, components }];
+      return { ...s, salaryStructures: updatedStructures };
+    });
+  }, []);
+
+  const generatePayroll = useCallback((month: string, adminName: string) => {
+    setState(s => {
+      const newPayslips: Payslip[] = [];
+      const newNotifications: AppNotification[] = [];
+      const activeEmployees = (s.employees || []).filter(e => e.status === 'Active');
+      
+      activeEmployees.forEach(emp => {
+        // Skip if already generated
+        if ((s.payslips || []).some(p => p.employeeId === emp.id && p.month === month)) return;
+        
+        const struct = (s.salaryStructures || []).find(st => st.employeeId === emp.id) || { gross: 65000, net: 58450, components: [] };
+        const deductions = struct.gross - struct.net;
+        newPayslips.push({
+          id: `ps-${genId()}`,
+          employeeId: emp.id,
+          month,
+          grossSalary: struct.gross,
+          netSalary: struct.net,
+          deductions,
+          status: 'Processed'
+        });
+        newNotifications.push({
+          id: `notif-${genId()}`, targetUserId: emp.id, title: 'Payslip Available',
+          message: `Your payslip for ${month} has been generated.`, time: now(), read: false, type: 'payroll'
+        });
+      });
+      return { ...s, payslips: [...newPayslips, ...(s.payslips || [])], notifications: [...newNotifications, ...s.notifications] };
+    });
+  }, []);
+
+  const markPayslipPaid = useCallback((payslipId: string) => {
+    setState(s => ({
+      ...s,
+      payslips: (s.payslips || []).map(p => p.id === payslipId ? { ...p, status: 'Paid' } : p)
+    }));
+  }, []);
+
+  const addGoal = useCallback((goal: Omit<Goal, 'id'>) => {
+    setState(s => {
+      const newGoal = { ...goal, id: `g-${genId()}` };
+      const notif: AppNotification = {
+        id: `notif-${genId()}`, targetUserId: goal.employeeId, title: 'New Goal Assigned',
+        message: `A new goal "${goal.title}" has been assigned to you.`, time: now(), read: false, type: 'general'
+      };
+      return { ...s, goals: [newGoal, ...(s.goals || [])], notifications: [notif, ...s.notifications] };
+    });
+  }, []);
+
+  const updateGoal = useCallback((id: string, updates: Partial<Goal>) => {
+    setState(s => ({
+      ...s, goals: (s.goals || []).map(g => g.id === id ? { ...g, ...updates } : g)
+    }));
+  }, []);
+
+  const addReview = useCallback((review: Omit<PerformanceReview, 'id'>) => {
+    setState(s => {
+      const newReview = { ...review, id: `rev-${genId()}` };
+      const notif: AppNotification = {
+        id: `notif-${genId()}`, targetUserId: review.employeeId, title: 'New Performance Review',
+        message: `Your performance review for ${review.period} is available.`, time: now(), read: false, type: 'general'
+      };
+      return { ...s, reviews: [newReview, ...(s.reviews || [])], notifications: [notif, ...s.notifications] };
+    });
+  }, []);
+
+  const updateReview = useCallback((id: string, updates: Partial<PerformanceReview>) => {
+    setState(s => ({
+      ...s, reviews: (s.reviews || []).map(r => r.id === id ? { ...r, ...updates } : r)
+    }));
+  }, []);
+
   return (
     <AppStoreContext.Provider value={{
       state, updateEmployee, submitLeave, approveLeave, rejectLeave,
@@ -589,7 +718,9 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       getPayslipsByEmployee, getGoalsByEmployee, getReviewsByEmployee,
       getAssetsByEmployee, getDocumentsByEmployee,
       getGeneralRequestsByEmployee, getAssetIssuesByEmployee, getAttendanceCorrectionsByEmployee,
-      getNotificationsForUser, getUnreadCount, getLeaveBalance, updateLeaveBalance
+      getNotificationsForUser, getUnreadCount, getLeaveBalance, updateLeaveBalance,
+      getSalaryStructure, updateSalaryStructure, generatePayroll, markPayslipPaid,
+      addGoal, updateGoal, addReview, updateReview
     }}>
       {children}
     </AppStoreContext.Provider>

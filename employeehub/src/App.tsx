@@ -12,6 +12,8 @@ import { EmployeeProfilePage } from '@/pages/EmployeeProfilePage';
 import { DepartmentsPage } from '@/pages/DepartmentsPage';
 import { AdminAttendancePage } from '@/pages/admin/AdminAttendancePage';
 import { AdminLeavePage } from '@/pages/admin/AdminLeavePage';
+import { AdminPayrollPage } from '@/pages/admin/AdminPayrollPage';
+import { AdminPerformancePage } from '@/pages/admin/AdminPerformancePage';
 import { EmployeeDashboard } from '@/pages/employee/EmployeeDashboard';
 import { EmployeeLeavePage } from '@/pages/employee/EmployeeLeavePage';
 import { EmployeeProfilePage as MyProfilePage } from '@/pages/employee/EmployeeProfilePage';
@@ -67,11 +69,11 @@ function AdminLayout() {
             <Route path="/attendance" element={<AdminAttendancePage />} />
             <Route path="/leave" element={<AdminLeavePage />} />
             <Route path="/holidays" element={<Placeholder title="Holidays" />} />
-            <Route path="/payroll" element={<Placeholder title="Payroll" />} />
-            <Route path="/payslips" element={<Placeholder title="Payslips" />} />
-            <Route path="/salary" element={<Placeholder title="Salary Management" />} />
-            <Route path="/goals" element={<Placeholder title="Goals" />} />
-            <Route path="/reviews" element={<Placeholder title="Performance Reviews" />} />
+            <Route path="/payroll" element={<AdminPayrollPage />} />
+            <Route path="/payslips" element={<AdminPayrollPage />} />
+            <Route path="/salary" element={<AdminPayrollPage />} />
+            <Route path="/goals" element={<AdminPerformancePage />} />
+            <Route path="/reviews" element={<AdminPerformancePage />} />
             <Route path="/jobs" element={<Placeholder title="Job Openings" />} />
             <Route path="/candidates" element={<Placeholder title="Candidates" />} />
             <Route path="/interviews" element={<Placeholder title="Interviews" />} />

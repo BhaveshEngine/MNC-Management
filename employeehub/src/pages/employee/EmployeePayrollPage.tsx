@@ -9,22 +9,21 @@ import { currentEmployee } from '@/data/employee-mock-data';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 
 export function EmployeePayrollPage() {
-  const { getPayslipsByEmployee } = useAppStore();
+  const { getPayslipsByEmployee, getSalaryStructure } = useAppStore();
   const payslips = getPayslipsByEmployee(currentEmployee.id);
+  const salaryStructure = getSalaryStructure(currentEmployee.id) || { gross: 65000, net: 58450, components: [] };
   
   const [selectedMonth, setSelectedMonth] = useState('September 2026');
   const [showPayslipModal, setShowPayslipModal] = useState<string | null>(null);
 
   // Breakdown Data
-  const breakdownData = [
-    { name: 'Basic', value: 32500, color: '#3b82f6', percentage: '50%' },
-    { name: 'HRA', value: 13000, color: '#10b981', percentage: '20%' },
-    { name: 'Special Allowance', value: 7800, color: '#f59e0b', percentage: '12%' },
-    { name: 'Other Allowances', value: 6500, color: '#8b5cf6', percentage: '10%' },
-    { name: 'PF', value: 1950, color: '#ef4444', percentage: '3%' },
-    { name: 'Professional Tax', value: 200, color: '#f97316', percentage: '0.3%' },
-    { name: 'Income Tax', value: 2100, color: '#ec4899', percentage: '3%' },
-  ];
+  const defaultColors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#f97316', '#ec4899'];
+  const breakdownData = salaryStructure.components.map((c, i) => ({
+    name: c.name,
+    value: c.value,
+    color: defaultColors[i % defaultColors.length],
+    percentage: c.percentage || '0%'
+  }));
 
   return (
     <div className="max-w-[1200px] mx-auto animate-slide-up space-y-6">
@@ -42,7 +41,7 @@ export function EmployeePayrollPage() {
             </div>
             <span className="text-[13px] font-medium uppercase tracking-wider">Current Salary</span>
           </div>
-          <p className="text-[24px] font-bold text-gray-900 mt-2">₹65,000</p>
+          <p className="text-[24px] font-bold text-gray-900 mt-2">₹{salaryStructure.gross.toLocaleString('en-IN')}</p>
           <p className="text-[12px] text-gray-400 mt-1">Gross per month</p>
         </Card>
         
@@ -53,7 +52,7 @@ export function EmployeePayrollPage() {
             </div>
             <span className="text-[13px] font-medium uppercase tracking-wider">Net Salary</span>
           </div>
-          <p className="text-[24px] font-bold text-gray-900 mt-2">₹58,450</p>
+          <p className="text-[24px] font-bold text-gray-900 mt-2">₹{salaryStructure.net.toLocaleString('en-IN')}</p>
           <p className="text-[12px] text-gray-400 mt-1">Take-home per month</p>
         </Card>
 
