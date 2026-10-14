@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: mnc-record-system
+    runtime: docker
+    plan: free
+    envVars:
+      - key: PORT
+        value: 8000
+

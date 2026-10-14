@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import { api } from '@/lib/api';
 
 /* ═══════════════════════════════════════════════════════
    TYPES
@@ -58,6 +59,8 @@ export interface AttendanceCorrection {
   employeeId: string;
   employeeName: string;
   date: string;
+  checkIn?: string;
+  checkOut?: string;
   reason: string;
   status: 'Pending' | 'Approved' | 'Rejected';
   appliedOn: string;
@@ -325,7 +328,10 @@ interface AppStoreContextType {
   approveLeave: (id: string, reviewerName: string) => void;
   rejectLeave: (id: string, reviewerName: string) => void;
   // Employee actions
+  addEmployee: (emp: Omit<StoreEmployee, 'id' | 'employeeId'>) => void;
   updateEmployee: (id: string, updates: Partial<StoreEmployee>) => void;
+  deleteEmployee: (id: string) => void;
+  resetDemoData: () => void;
   // Attendance actions
   checkIn: (employeeId: string) => void;
   checkOut: (employeeId: string) => void;
@@ -390,6 +396,44 @@ function loadState(): AppState {
 export function AppStoreProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>(loadState);
 
+  // Fetch initial data from backend
+  useEffect(() => {
+    api.getRecords()
+      .then(records => {
+        setState(s => {
+          const mappedEmployees = records.map((r: any) => ({
+            id: r.id,
+            employeeId: r.employeeId,
+            firstName: r.name ? r.name.split(' ')[0] : '',
+            lastName: r.name && r.name.split(' ').length > 1 ? r.name.split(' ').slice(1).join(' ') : '',
+            email: `${r.name ? r.name.split(' ')[0].toLowerCase() : 'emp'}@employeehub.in`,
+            phone: r.contactNo || '',
+            dateOfBirth: '',
+            gender: '',
+            address: r.address || '',
+            city: '',
+            state: '',
+            department: r.department || '',
+            designation: 'Employee',
+            managerName: '',
+            joiningDate: '',
+            employmentType: 'Full-time',
+            workLocation: '',
+            salary: r.salary || 0,
+            status: 'Active'
+          }));
+          return { ...s, employees: mappedEmployees };
+        });
+      })
+      .catch(err => console.error("Failed to fetch records from API", err));
+
+    api.getAttendance()
+      .then(attendance => {
+        // Attendance mapping could be added here if needed
+      })
+      .catch(err => console.error("Failed to fetch attendance from API", err));
+  }, []);
+
   // Persist on every change
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -399,11 +443,72 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const now = () => new Date().toISOString();
 
   // ── Employee ──
+  const addEmployee = useCallback(async (emp: Omit<StoreEmployee, 'id' | 'employeeId'>) => {
+    let newEmp: StoreEmployee;
+    setState(s => {
+      const empIds = s.employees.map(e => parseInt(e.employeeId.split('-')[1]) || 0);
+      const nextId = `EMP-${Math.max(1024, ...empIds) + 1}`;
+      newEmp = {
+        ...emp,
+        id: `emp-${genId()}`,
+        employeeId: nextId,
+      };
+      return {
+        ...s,
+        employees: [newEmp, ...s.employees],
+        leaveBalances: [...s.leaveBalances, { employeeId: newEmp.id, annual: { total: 14, used: 0 }, sick: { total: 8, used: 0 }, casual: { total: 5, used: 0 } }]
+      };
+    });
+
+    // Sync with backend API
+    try {
+      await api.addRecord({
+        employeeId: newEmp!.employeeId,
+        age: 30, // Default age
+        name: `${newEmp!.firstName} ${newEmp!.lastName}`,
+        department: newEmp!.department,
+        salary: newEmp!.salary,
+        contactNo: newEmp!.phone,
+        address: newEmp!.address
+      });
+    } catch (err) {
+      console.error("Failed to sync new employee to backend:", err);
+    }
+  }, []);
+
   const updateEmployee = useCallback((id: string, updates: Partial<StoreEmployee>) => {
     setState(s => ({
       ...s,
       employees: s.employees.map(e => e.id === id ? { ...e, ...updates } : e)
     }));
+  }, []);
+
+  const deleteEmployee = useCallback(async (id: string) => {
+    let employeeIdToDelete: string | undefined;
+    
+    setState(s => {
+      const emp = s.employees.find(e => e.id === id);
+      if (emp) {
+        employeeIdToDelete = emp.employeeId;
+      }
+      return {
+        ...s,
+        employees: s.employees.filter(e => e.id !== id)
+      };
+    });
+
+    if (employeeIdToDelete) {
+      try {
+        await api.deleteRecord(employeeIdToDelete);
+      } catch (err) {
+        console.error("Failed to delete employee on backend:", err);
+      }
+    }
+  }, []);
+
+  const resetDemoData = useCallback(() => {
+    setState(INITIAL_STATE);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_STATE));
   }, []);
 
   // ── Leave ──
@@ -497,11 +602,13 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       // Update actual attendance record if it exists, or create a new one
       const existingAttIndex = s.attendance.findIndex(a => a.employeeId === req.employeeId && a.date === req.date);
       let updatedAtt = [...s.attendance];
+      const cin = req.checkIn || '09:00 AM';
+      const cout = req.checkOut || '06:00 PM';
       if (existingAttIndex >= 0) {
-        updatedAtt[existingAttIndex] = { ...updatedAtt[existingAttIndex], checkIn: req.checkIn, checkOut: req.checkOut, hours: calcHours(req.checkIn, req.checkOut), status: 'Present' };
+        updatedAtt[existingAttIndex] = { ...updatedAtt[existingAttIndex], checkIn: cin, checkOut: cout, hours: calcHours(cin, cout), status: 'Present' };
       } else {
         updatedAtt.push({
-          id: `att-${genId()}`, employeeId: req.employeeId, date: req.date, checkIn: req.checkIn, checkOut: req.checkOut, hours: calcHours(req.checkIn, req.checkOut), status: 'Present'
+          id: `att-${genId()}`, employeeId: req.employeeId, date: req.date, checkIn: cin, checkOut: cout, hours: calcHours(cin, cout), status: 'Present'
         });
       }
 
@@ -713,7 +820,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppStoreContext.Provider value={{
-      state, updateEmployee, submitLeave, approveLeave, rejectLeave,
+      state, addEmployee, updateEmployee, deleteEmployee, resetDemoData, submitLeave, approveLeave, rejectLeave,
       checkIn, checkOut, requestAttendanceCorrection, approveAttendanceCorrection, rejectAttendanceCorrection, reportAssetIssue, uploadDocument,
       submitGeneralRequest, cancelRequest,
       addAnnouncement, addNotification, markNotificationRead, markAllNotificationsRead,

@@ -1,29 +1,45 @@
-import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search, SlidersHorizontal, Download, Upload, ChevronLeft, ChevronRight,
-  Eye, Pencil, MoreHorizontal, ArrowUpDown, ArrowUp, ArrowDown,
+  Eye, Pencil, MoreHorizontal, ArrowUpDown, ArrowUp, ArrowDown, Plus, Trash2
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { employees, getDepartmentName, departments } from '@/data/mock-data';
-import { formatSalary, formatDate, cn } from '@/lib/utils';
-import type { Employee } from '@/types';
+import { departments } from '@/data/mock-data';
+import { formatSalary, cn } from '@/lib/utils';
+import { useAppStore, type StoreEmployee } from '@/store/AppStore';
+import { EmployeeFormModal } from '@/components/employee/EmployeeFormModal';
 
 const PAGE_SIZE = 10;
 
 export function EmployeesPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { state, addEmployee, updateEmployee, deleteEmployee } = useAppStore();
+  const employees = state.employees || [];
+
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [deptFilter, setDeptFilter] = useState('All');
-  const [sortField, setSortField] = useState<keyof Employee>('firstName');
+  const [sortField, setSortField] = useState<keyof StoreEmployee>('firstName');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  // Modal states
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<StoreEmployee | null>(null);
+
+  useEffect(() => {
+    if (searchParams.get('add') === 'true') {
+      setIsFormOpen(true);
+      setSearchParams({}); // Clear it so it doesn't reopen on refresh
+    }
+  }, [searchParams, setSearchParams]);
 
   const filtered = useMemo(() => {
     let result = employees.filter((emp) => {
@@ -34,7 +50,7 @@ export function EmployeesPage() {
         emp.email.toLowerCase().includes(term) ||
         emp.designation.toLowerCase().includes(term);
       const matchesStatus = statusFilter === 'All' || emp.status === statusFilter;
-      const matchesDept = deptFilter === 'All' || emp.departmentId === deptFilter;
+      const matchesDept = deptFilter === 'All' || emp.department === deptFilter;
       return matchesSearch && matchesStatus && matchesDept;
     });
 
@@ -44,12 +60,12 @@ export function EmployeesPage() {
       return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
     });
     return result;
-  }, [search, statusFilter, deptFilter, sortField, sortDir]);
+  }, [employees, search, statusFilter, deptFilter, sortField, sortDir]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const handleSort = (field: keyof Employee) => {
+  const handleSort = (field: keyof StoreEmployee) => {
     if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
     else { setSortField(field); setSortDir('asc'); }
   };
@@ -62,14 +78,38 @@ export function EmployeesPage() {
     setSelected(prev => prev.size === paginated.length ? new Set() : new Set(paginated.map(e => e.id)));
   };
 
-  const SortIndicator = ({ field }: { field: keyof Employee }) => {
+  const handleDelete = (emp: StoreEmployee) => {
+    if (emp.employeeId === 'EMP-1024') {
+      alert("Cannot delete the demo administrator account.");
+      return;
+    }
+    if (confirm(`Delete ${emp.firstName} ${emp.lastName}? This can't be undone.`)) {
+      deleteEmployee(emp.id);
+    }
+  };
+
+  const handleSaveEmployee = (data: Partial<StoreEmployee>) => {
+    if (editingEmployee) {
+      updateEmployee(editingEmployee.id, data);
+    } else {
+      // Check for duplicate email
+      if (employees.some(e => e.email.toLowerCase() === data.email?.toLowerCase())) {
+        alert("An employee with this email already exists.");
+        return;
+      }
+      addEmployee(data as Omit<StoreEmployee, 'id' | 'employeeId'>);
+    }
+    setIsFormOpen(false);
+    setEditingEmployee(null);
+  };
+
+  const SortIndicator = ({ field }: { field: keyof StoreEmployee }) => {
     if (sortField !== field) return <ArrowUpDown className="w-3 h-3 text-gray-300" />;
     return sortDir === 'asc' ? <ArrowUp className="w-3 h-3 text-brand-600" /> : <ArrowDown className="w-3 h-3 text-brand-600" />;
   };
 
   return (
     <div className="space-y-5 animate-slide-up">
-      {/* ── Header ── */}
       <PageHeader
         title="Employees"
         subtitle={`${employees.length} total employees · ${employees.filter(e => e.status === 'Active').length} active`}
@@ -77,11 +117,11 @@ export function EmployeesPage() {
           <>
             <Button variant="outline" size="sm" icon={<Upload className="w-3.5 h-3.5" />}>Import</Button>
             <Button variant="outline" size="sm" icon={<Download className="w-3.5 h-3.5" />}>Export</Button>
+            <Button size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={() => { setEditingEmployee(null); setIsFormOpen(true); }}>Add Employee</Button>
           </>
         }
       />
 
-      {/* ── Toolbar ── */}
       <Card padding="sm">
         <div className="flex flex-col md:flex-row gap-2.5">
           <div className="relative flex-1">
@@ -102,7 +142,7 @@ export function EmployeesPage() {
               className="h-8 px-2.5 text-[12px] rounded-lg border border-gray-200 bg-white text-gray-600 focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
             >
               <option value="All">All Departments</option>
-              {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+              {departments.map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
             </select>
             <select
               value={statusFilter}
@@ -112,9 +152,7 @@ export function EmployeesPage() {
               <option value="All">All Status</option>
               <option>Active</option>
               <option>On Leave</option>
-              <option>Probation</option>
-              <option>Resigned</option>
-              <option>Terminated</option>
+              <option>Inactive</option>
             </select>
             <button className="h-8 px-2.5 rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 transition-colors flex items-center gap-1.5 text-[12px]">
               <SlidersHorizontal className="w-3.5 h-3.5" /> More Filters
@@ -124,13 +162,12 @@ export function EmployeesPage() {
         {selected.size > 0 && (
           <div className="flex items-center gap-3 mt-2.5 pt-2.5 border-t border-gray-100 text-[12px]">
             <span className="text-gray-500 font-medium">{selected.size} selected</span>
-            <button className="text-danger-600 font-semibold hover:underline">Delete</button>
+            <button className="text-danger-600 font-semibold hover:underline">Delete Selected</button>
             <button className="text-gray-500 font-medium hover:underline" onClick={() => setSelected(new Set())}>Clear</button>
           </div>
         )}
       </Card>
 
-      {/* ── Table ── */}
       <Card padding="none" className="overflow-hidden">
         <div className="overflow-x-auto">
           <table>
@@ -177,7 +214,7 @@ export function EmployeesPage() {
                   <td>
                     <span className="text-[12px] font-mono font-medium text-brand-600">{emp.employeeId}</span>
                   </td>
-                  <td className="text-[13px] text-gray-600">{getDepartmentName(emp.departmentId)}</td>
+                  <td className="text-[13px] text-gray-600">{emp.department}</td>
                   <td className="text-[13px] text-gray-600">{emp.designation}</td>
                   <td className="text-[12px] text-gray-500">{emp.workLocation}</td>
                   <td className="text-right">
@@ -189,11 +226,11 @@ export function EmployeesPage() {
                       <button onClick={() => navigate(`/employees/${emp.id}`)} className="w-7 h-7 rounded-md flex items-center justify-center text-gray-400 hover:text-brand-600 hover:bg-brand-50 transition-colors" title="View">
                         <Eye className="w-3.5 h-3.5" />
                       </button>
-                      <button className="w-7 h-7 rounded-md flex items-center justify-center text-gray-400 hover:text-brand-600 hover:bg-brand-50 transition-colors" title="Edit">
+                      <button onClick={() => { setEditingEmployee(emp); setIsFormOpen(true); }} className="w-7 h-7 rounded-md flex items-center justify-center text-gray-400 hover:text-brand-600 hover:bg-brand-50 transition-colors" title="Edit">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
-                      <button className="w-7 h-7 rounded-md flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors" title="More">
-                        <MoreHorizontal className="w-3.5 h-3.5" />
+                      <button onClick={() => handleDelete(emp)} className="w-7 h-7 rounded-md flex items-center justify-center text-gray-400 hover:text-danger-600 hover:bg-danger-50 transition-colors" title="Delete">
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </td>
@@ -258,6 +295,13 @@ export function EmployeesPage() {
           </div>
         )}
       </Card>
+
+      <EmployeeFormModal
+        isOpen={isFormOpen}
+        onClose={() => { setIsFormOpen(false); setEditingEmployee(null); }}
+        employee={editingEmployee}
+        onSave={handleSaveEmployee}
+      />
     </div>
   );
 }

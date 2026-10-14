@@ -109,7 +109,7 @@ export function AdminSalaryPage() {
       </Card>
 
       {/* Edit Salary Modal */}
-      <Modal isOpen={!!editingSalaryEmpId} onClose={() => setEditingSalaryEmpId(null)} title={`Edit Salary Structure - ${editingEmpName}`}>
+      <Modal open={!!editingSalaryEmpId} onClose={() => setEditingSalaryEmpId(null)} title={`Edit Salary Structure - ${editingEmpName}`}>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             {editingComponents.map((comp, idx) => (

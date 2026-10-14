@@ -15,8 +15,9 @@ import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { employees, getDepartmentName } from '@/data/mock-data';
 import { formatSalary, formatDate, cn } from '@/lib/utils';
+import { useAppStore, type StoreEmployee } from '@/store/AppStore';
+import { EmployeeFormModal } from '@/components/employee/EmployeeFormModal';
 
 /* ── Tabs ── */
 const tabs = [
@@ -113,9 +114,11 @@ function MiniTooltip({ active, payload, label }: any) {
 export function EmployeeProfilePage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { state, updateEmployee } = useAppStore();
   const [activeTab, setActiveTab] = useState('overview');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  const employee = employees.find(e => e.id === id);
+  const employee = (state.employees || []).find(e => e.id === id);
 
   if (!employee) {
     return (
@@ -147,8 +150,21 @@ export function EmployeeProfilePage() {
     return `${months >= 0 ? months : 12 + months}m`;
   };
 
+  const handleSaveEmployee = (data: Partial<StoreEmployee>) => {
+    if (employee) {
+      updateEmployee(employee.id, data);
+    }
+    setIsEditModalOpen(false);
+  };
+
   return (
     <div className="max-w-[1600px] mx-auto animate-slide-up">
+      <EmployeeFormModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        employee={employee}
+        onSave={handleSaveEmployee}
+      />
       {/* ── Back ── */}
       <button
         onClick={() => navigate('/employees')}
@@ -179,7 +195,7 @@ export function EmployeeProfilePage() {
                 <h1 className="text-[24px] font-bold text-gray-900 tracking-tight">{fullName}</h1>
                 <StatusBadge status={employee.status} />
               </div>
-              <p className="text-[15px] text-gray-500">{employee.designation} · {getDepartmentName(employee.departmentId)}</p>
+              <p className="text-[15px] text-gray-500">{employee.designation} · {employee.department}</p>
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-3 text-[13px] text-gray-500">
                 <span className="flex items-center gap-1.5"><Briefcase className="w-3.5 h-3.5 text-gray-400" />{employee.employeeId}</span>
                 <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-gray-400" />{employee.workLocation}</span>
@@ -190,7 +206,7 @@ export function EmployeeProfilePage() {
 
             <div className="flex gap-2 flex-shrink-0 self-start md:self-end">
               <Button variant="outline" size="md" icon={<Mail className="w-4 h-4" />}>Message</Button>
-              <Button size="md" icon={<Pencil className="w-4 h-4" />}>Edit</Button>
+              <Button size="md" icon={<Pencil className="w-4 h-4" />} onClick={() => setIsEditModalOpen(true)}>Edit</Button>
             </div>
           </div>
 
@@ -258,7 +274,7 @@ export function EmployeeProfilePage() {
             </Card>
             <Card>
               <h3 className="text-[15px] font-semibold text-gray-900 mb-4">Employment Details</h3>
-              <InfoRow label="Department" value={getDepartmentName(employee.departmentId)} icon={<Building2 className="w-4 h-4" />} />
+              <InfoRow label="Department" value={employee.department} icon={<Building2 className="w-4 h-4" />} />
               <InfoRow label="Designation" value={employee.designation} icon={<Briefcase className="w-4 h-4" />} />
               <InfoRow label="Employment Type" value={employee.employmentType} icon={<FileText className="w-4 h-4" />} />
               <InfoRow label="Joining Date" value={formatDate(employee.joiningDate)} icon={<Calendar className="w-4 h-4" />} />
@@ -304,7 +320,7 @@ export function EmployeeProfilePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <h3 className="text-[15px] font-semibold text-gray-900 mb-4">Job Details</h3>
-              <InfoRow label="Department" value={getDepartmentName(employee.departmentId)} icon={<Building2 className="w-4 h-4" />} />
+              <InfoRow label="Department" value={employee.department} icon={<Building2 className="w-4 h-4" />} />
               <InfoRow label="Designation" value={employee.designation} icon={<Briefcase className="w-4 h-4" />} />
               <InfoRow label="Employment Type" value={employee.employmentType} icon={<FileText className="w-4 h-4" />} />
               <InfoRow label="Status" value={employee.status} icon={<Activity className="w-4 h-4" />} />

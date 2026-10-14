@@ -211,7 +211,7 @@ export function AdminAttendancePage() {
                     <td className="px-6 py-4 text-[14px] font-medium text-gray-900">{req.employeeName}</td>
                     <td className="px-6 py-4 text-[13px] text-gray-600">{new Date(req.date).toLocaleDateString()}</td>
                     <td className="px-6 py-4">
-                      <div className="text-[13px] text-gray-900 font-medium">{req.checkIn} — {req.checkOut}</div>
+                      <div className="text-[13px] text-gray-900 font-medium">{req.checkIn || '09:00 AM'} — {req.checkOut || '06:00 PM'}</div>
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-[13px] text-gray-600 max-w-[200px] truncate" title={req.reason}>{req.reason}</p>

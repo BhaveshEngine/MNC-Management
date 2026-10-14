@@ -99,6 +99,13 @@ def save_attendance(attendance):
 
 
 class RequestHandler(BaseHTTPRequestHandler):
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
+        self.end_headers()
+
     def do_GET(self):
         if self.path == "/api/records":
             self.send_json(200, load_records())
@@ -170,15 +177,35 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.send_error(404, "Not found")
 
     def serve_static(self):
-        path = self.path
-        if path == "/":
-            path = "/index.html"
+        clean_path = self.path.split("?")[0].split("#")[0]
+        if clean_path == "/":
+            clean_path = "/index.html"
 
-        file_path = path.lstrip("/")
-        if not os.path.exists(file_path):
-            self.send_error(404, "File not found")
+        rel_path = clean_path.lstrip("/")
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        dist_dir = os.path.join(base_dir, "employeehub", "dist")
+
+        # 1. Serve from built Vite React app if available
+        if os.path.exists(dist_dir):
+            file_path = os.path.join(dist_dir, rel_path)
+            if os.path.isfile(file_path):
+                self._send_file(file_path)
+                return
+            # SPA fallback: Any non-file path falls back to dist/index.html
+            spa_index = os.path.join(dist_dir, "index.html")
+            if os.path.isfile(spa_index):
+                self._send_file(spa_index)
+                return
+
+        # 2. Fallback to root directory static files
+        file_path = os.path.join(base_dir, rel_path)
+        if os.path.isfile(file_path):
+            self._send_file(file_path)
             return
 
+        self.send_error(404, "File not found")
+
+    def _send_file(self, file_path):
         mime_type, _ = mimetypes.guess_type(file_path)
         if mime_type is None:
             mime_type = "application/octet-stream"
@@ -187,6 +214,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             content = f.read()
 
         self.send_response(200)
+        self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Content-Type", mime_type)
         self.send_header("Content-Length", str(len(content)))
         self.end_headers()
@@ -195,6 +223,7 @@ class RequestHandler(BaseHTTPRequestHandler):
     def send_json(self, status_code, payload):
         content = json.dumps(payload).encode("utf-8")
         self.send_response(status_code)
+        self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(content)))
         self.end_headers()
@@ -208,6 +237,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     ensure_files()
-    server = ThreadingHTTPServer(("0.0.0.0", 8000), RequestHandler)
-    print("Storage server running on http://localhost:8000")
+    port = int(os.environ.get("PORT", 8000))
+    server = ThreadingHTTPServer(("0.0.0.0", port), RequestHandler)
+    print(f"Storage server running on http://localhost:{port}")
     server.serve_forever()

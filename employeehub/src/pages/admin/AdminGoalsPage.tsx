@@ -22,7 +22,7 @@ export function AdminGoalsPage() {
 
   const filteredGoals = goals.filter(g => {
     const emp = state.employees.find(e => e.id === g.employeeId);
-    const matchesSearch = emp?.firstName.toLowerCase().includes(searchQuery.toLowerCase()) || g.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = emp?.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) || g.title.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
   });
 
@@ -142,7 +142,7 @@ export function AdminGoalsPage() {
       </Card>
 
       {/* Goal Modal */}
-      <Modal isOpen={showGoalModal} onClose={() => setShowGoalModal(false)} title={goalForm.id ? "Edit Goal" : "Add New Goal"}>
+      <Modal open={showGoalModal} onClose={() => setShowGoalModal(false)} title={goalForm.id ? "Edit Goal" : "Add New Goal"}>
         <div className="space-y-4">
           <div>
             <label className="block text-[13px] font-medium text-gray-700 mb-1">Employee</label>

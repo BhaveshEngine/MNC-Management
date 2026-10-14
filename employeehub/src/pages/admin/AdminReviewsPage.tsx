@@ -19,7 +19,7 @@ export function AdminReviewsPage() {
 
   const filteredReviews = reviews.filter(r => {
     const emp = state.employees.find(e => e.id === r.employeeId);
-    const matchesSearch = emp?.firstName.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = emp?.firstName?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
   });
 
@@ -120,7 +120,7 @@ export function AdminReviewsPage() {
       </Card>
 
       {/* Review Modal */}
-      <Modal isOpen={showReviewModal} onClose={() => setShowReviewModal(false)} title={reviewForm.id ? "Edit Review" : "New Review"}>
+      <Modal open={showReviewModal} onClose={() => setShowReviewModal(false)} title={reviewForm.id ? "Edit Review" : "New Review"}>
         <div className="space-y-4">
           <div>
             <label className="block text-[13px] font-medium text-gray-700 mb-1">Employee</label>

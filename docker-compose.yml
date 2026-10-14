@@ -1,0 +1,11 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+    volumes:
+      - ./employee_records.txt:/app/employee_records.txt
+      - ./attendance.txt:/app/attendance.txt
+    restart: always

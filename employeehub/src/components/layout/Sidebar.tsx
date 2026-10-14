@@ -12,6 +12,8 @@ import {
   Zap, ChevronsLeft, ChevronsRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAppStore } from '@/store/AppStore';
+import { RefreshCcw } from 'lucide-react';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -101,6 +103,7 @@ const sections = [
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { resetDemoData } = useAppStore();
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
@@ -194,6 +197,30 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             : <>
                 <ChevronsLeft className="w-[18px] h-[18px]" />
                 <span className="font-medium">Collapse</span>
+              </>
+          }
+        </button>
+        <button
+          onClick={() => {
+            if (confirm('Reset all demo data back to initial state?')) {
+              resetDemoData();
+              window.location.reload();
+            }
+          }}
+          className={cn(
+            'flex items-center rounded-lg text-danger-400 hover:text-white hover:bg-danger-500/20 transition-colors mt-2',
+            collapsed
+              ? 'justify-center h-10 w-10 mx-auto'
+              : 'gap-3 px-3 h-[42px] w-full text-[13.5px]'
+          )}
+          aria-label="Reset demo data"
+          title="Reset demo data"
+        >
+          {collapsed
+            ? <RefreshCcw className="w-[16px] h-[16px]" />
+            : <>
+                <RefreshCcw className="w-[16px] h-[16px]" />
+                <span className="font-medium">Reset Data</span>
               </>
           }
         </button>

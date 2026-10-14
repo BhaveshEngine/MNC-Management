@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Users, UserCheck, Building2, CalendarCheck, DollarSign, UserPlus,
   Plus, ClipboardList, CheckCircle, Megaphone, FileBarChart, Wallet,
@@ -14,7 +15,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAppStore } from '@/store/AppStore';
-import { employees, departments } from '@/data/mock-data';
+import { departments } from '@/data/mock-data';
 import { cn, formatCurrency, getGreeting, getCurrentDate, getCurrentTime } from '@/lib/utils';
 
 /* ── Chart Data ── */
@@ -140,7 +141,10 @@ function PendingApprovalsCard() {
 
 /* ── Dashboard ── */
 export function DashboardPage() {
+  const navigate = useNavigate();
+  const { state } = useAppStore();
   const [attendanceRange, setAttendanceRange] = useState('7D');
+  const employees = state.employees || [];
 
   const activeEmps = employees.filter(e => e.status === 'Active').length;
   const onLeave = employees.filter(e => e.status === 'On Leave').length;
@@ -153,8 +157,8 @@ export function DashboardPage() {
 
   const deptData = departments.map(d => ({
     name: d.name,
-    value: employees.filter(e => e.departmentId === d.id).length,
-  })).sort((a, b) => b.value - a.value);
+    value: employees.filter(e => e.department === d.name).length,
+  })).sort((a, b) => b.value - a.value).filter(d => d.value > 0);
 
   const totalEmpCount = employees.length;
 
@@ -181,7 +185,7 @@ export function DashboardPage() {
               <p className="text-[14px] font-medium text-gray-700">{getCurrentDate()}</p>
               <p className="text-[13px] text-gray-400 mt-0.5">{getCurrentTime()}</p>
             </div>
-            <Button icon={<Plus className="w-4 h-4" />} size="lg">
+            <Button icon={<Plus className="w-4 h-4" />} size="lg" onClick={() => navigate('/employees?add=true')}>
               Add Employee
             </Button>
           </>

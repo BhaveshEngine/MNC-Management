@@ -1,4 +1,4 @@
-import { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Card } from '@/components/ui/Card';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
