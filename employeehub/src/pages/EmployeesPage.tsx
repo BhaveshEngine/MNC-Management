@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search, SlidersHorizontal, Download, Upload, ChevronLeft, ChevronRight,
-  Eye, Pencil, MoreHorizontal, ArrowUpDown, ArrowUp, ArrowDown, Plus, Trash2
+  Eye, Pencil, MoreHorizontal, ArrowUpDown, ArrowUp, ArrowDown, Plus, Trash2, RotateCcw
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -12,14 +12,16 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { departments } from '@/data/mock-data';
 import { formatSalary, cn } from '@/lib/utils';
 import { useAppStore, type StoreEmployee } from '@/store/AppStore';
+import { useAuth } from '@/contexts/AuthContext';
 import { EmployeeFormModal } from '@/components/employee/EmployeeFormModal';
 
 const PAGE_SIZE = 10;
 
 export function EmployeesPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { state, addEmployee, updateEmployee, deleteEmployee } = useAppStore();
+  const { state, addEmployee, updateEmployee, deleteEmployee, resetDemoData } = useAppStore();
   const employees = state.employees || [];
 
   const [search, setSearch] = useState('');
@@ -79,12 +81,22 @@ export function EmployeesPage() {
   };
 
   const handleDelete = (emp: StoreEmployee) => {
-    if (emp.employeeId === 'EMP-1024') {
-      alert("Cannot delete the demo administrator account.");
+    const isRahul = emp.employeeId === 'EMP-1024' || emp.id === 'emp-1024' || `${emp.firstName} ${emp.lastName}`.trim().toLowerCase() === 'rahul sharma' || emp.email.toLowerCase() === 'rahul.sharma@employeehub.in';
+    const isAdmin = emp.id === 'admin-1' || emp.email.toLowerCase() === 'admin@employeehub.in' || (user && (emp.id === user.id || emp.email.toLowerCase() === user.email.toLowerCase()));
+
+    if (isRahul || isAdmin) {
+      alert("Cannot delete the demo employee (Rahul Sharma) or administrator account.");
       return;
     }
     if (confirm(`Delete ${emp.firstName} ${emp.lastName}? This can't be undone.`)) {
       deleteEmployee(emp.id);
+    }
+  };
+
+  const handleResetDemo = async () => {
+    if (confirm("Reset all data to default demo state? This will restore both local data and backend storage files.")) {
+      await resetDemoData();
+      alert("Demo data has been reset to default state.");
     }
   };
 
@@ -103,10 +115,10 @@ export function EmployeesPage() {
     setEditingEmployee(null);
   };
 
-  const SortIndicator = ({ field }: { field: keyof StoreEmployee }) => {
-    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 text-gray-300" />;
-    return sortDir === 'asc' ? <ArrowUp className="w-3 h-3 text-brand-600" /> : <ArrowDown className="w-3 h-3 text-brand-600" />;
-  };
+function SortIcon({ field, sortField, sortDir }: { field: keyof StoreEmployee; sortField: keyof StoreEmployee; sortDir: 'asc' | 'desc' }) {
+  if (sortField !== field) return <ArrowUpDown className="w-3 h-3 text-gray-300" />;
+  return sortDir === 'asc' ? <ArrowUp className="w-3 h-3 text-brand-600" /> : <ArrowDown className="w-3 h-3 text-brand-600" />;
+}
 
   return (
     <div className="space-y-5 animate-slide-up">
@@ -115,6 +127,7 @@ export function EmployeesPage() {
         subtitle={`${employees.length} total employees · ${employees.filter(e => e.status === 'Active').length} active`}
         actions={
           <>
+            <Button variant="outline" size="sm" icon={<RotateCcw className="w-3.5 h-3.5" />} onClick={handleResetDemo}>Reset Demo</Button>
             <Button variant="outline" size="sm" icon={<Upload className="w-3.5 h-3.5" />}>Import</Button>
             <Button variant="outline" size="sm" icon={<Download className="w-3.5 h-3.5" />}>Export</Button>
             <Button size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={() => { setEditingEmployee(null); setIsFormOpen(true); }}>Add Employee</Button>
@@ -178,18 +191,18 @@ export function EmployeesPage() {
                     className="w-3.5 h-3.5 rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
                 </th>
                 <th className="cursor-pointer hover:text-gray-700 select-none" onClick={() => handleSort('firstName')}>
-                  <span className="inline-flex items-center gap-1">Employee <SortIndicator field="firstName" /></span>
+                  <span className="inline-flex items-center gap-1">Employee <SortIcon field="firstName" sortField={sortField} sortDir={sortDir} /></span>
                 </th>
                 <th className="cursor-pointer hover:text-gray-700 select-none" onClick={() => handleSort('employeeId')}>
-                  <span className="inline-flex items-center gap-1">Emp ID <SortIndicator field="employeeId" /></span>
+                  <span className="inline-flex items-center gap-1">Emp ID <SortIcon field="employeeId" sortField={sortField} sortDir={sortDir} /></span>
                 </th>
                 <th>Department</th>
                 <th className="cursor-pointer hover:text-gray-700 select-none" onClick={() => handleSort('designation')}>
-                  <span className="inline-flex items-center gap-1">Designation <SortIndicator field="designation" /></span>
+                  <span className="inline-flex items-center gap-1">Designation <SortIcon field="designation" sortField={sortField} sortDir={sortDir} /></span>
                 </th>
                 <th>Location</th>
                 <th className="cursor-pointer hover:text-gray-700 select-none text-right" onClick={() => handleSort('salary')}>
-                  <span className="inline-flex items-center gap-1 justify-end">Salary <SortIndicator field="salary" /></span>
+                  <span className="inline-flex items-center gap-1 justify-end">Salary <SortIcon field="salary" sortField={sortField} sortDir={sortDir} /></span>
                 </th>
                 <th>Status</th>
                 <th className="text-right pr-4">Actions</th>

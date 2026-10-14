@@ -42,5 +42,15 @@ export const api = {
     });
     if (!res.ok) throw new Error('Failed to add attendance');
     return res.json();
+  },
+  resetDemoData: async () => {
+    const res = await fetch(`${API_BASE_URL}/reset`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!res.ok) throw new Error('Failed to reset demo data');
+    return res.json();
   }
 };

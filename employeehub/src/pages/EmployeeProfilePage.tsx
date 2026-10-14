@@ -278,6 +278,7 @@ export function EmployeeProfilePage() {
               <InfoRow label="Designation" value={employee.designation} icon={<Briefcase className="w-4 h-4" />} />
               <InfoRow label="Employment Type" value={employee.employmentType} icon={<FileText className="w-4 h-4" />} />
               <InfoRow label="Joining Date" value={formatDate(employee.joiningDate)} icon={<Calendar className="w-4 h-4" />} />
+              <InfoRow label="Reporting Manager" value={employee.managerName || '—'} icon={<User className="w-4 h-4" />} />
               <InfoRow label="Work Location" value={employee.workLocation} icon={<MapPin className="w-4 h-4" />} />
               <InfoRow label="Status" value={employee.status} icon={<Activity className="w-4 h-4" />} />
             </Card>
@@ -325,6 +326,7 @@ export function EmployeeProfilePage() {
               <InfoRow label="Employment Type" value={employee.employmentType} icon={<FileText className="w-4 h-4" />} />
               <InfoRow label="Status" value={employee.status} icon={<Activity className="w-4 h-4" />} />
               <InfoRow label="Joining Date" value={formatDate(employee.joiningDate)} icon={<Calendar className="w-4 h-4" />} />
+              <InfoRow label="Reporting Manager" value={employee.managerName || '—'} icon={<User className="w-4 h-4" />} />
               <InfoRow label="Work Location" value={employee.workLocation} icon={<MapPin className="w-4 h-4" />} />
             </Card>
             <Card>

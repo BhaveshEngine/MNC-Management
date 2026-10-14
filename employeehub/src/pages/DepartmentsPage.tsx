@@ -1,11 +1,15 @@
 import { Building2, Users } from 'lucide-react';
-import { departments, employees } from '@/data/mock-data';
+import { departments } from '@/data/mock-data';
 import { formatCurrency } from '@/lib/utils';
 import { Card } from '@/components/ui/Card';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Avatar } from '@/components/ui/Avatar';
+import { useAppStore } from '@/store/AppStore';
 
 export function DepartmentsPage() {
+  const { state } = useAppStore();
+  const allEmployees = state.employees || [];
+
   return (
     <div className="space-y-5 animate-slide-up">
       <PageHeader
@@ -15,8 +19,11 @@ export function DepartmentsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {departments.map((dept) => {
-          const deptEmps = employees.filter(e => e.departmentId === dept.id);
-          const head = employees.find(e => e.id === dept.headId);
+          const deptEmps = allEmployees.filter(e => 
+            e.department?.toLowerCase() === dept.name.toLowerCase() || 
+            (e as any).departmentId === dept.id
+          );
+          const head = allEmployees.find(e => e.id === dept.headId || (e.firstName + ' ' + e.lastName).toLowerCase() === 'rahul sharma');
           const activeCount = deptEmps.filter(e => e.status === 'Active').length;
           const avgSalary = deptEmps.length > 0
             ? deptEmps.reduce((s, e) => s + e.salary, 0) / deptEmps.length

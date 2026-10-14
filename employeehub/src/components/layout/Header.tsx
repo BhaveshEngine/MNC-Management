@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Bell, Moon, Sun, LogOut, ChevronDown, Settings, User } from 'lucide-react';
+import { Search, Bell, Moon, Sun, LogOut, ChevronDown, Settings, User, RotateCcw } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppStore } from '@/store/AppStore';
@@ -9,7 +9,7 @@ import { Link, useNavigate } from 'react-router-dom';
 export function Header() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const { getNotificationsForUser, getUnreadCount, markNotificationRead } = useAppStore();
+  const { getNotificationsForUser, getUnreadCount, markNotificationRead, resetDemoData } = useAppStore();
   const [time, setTime] = useState(getCurrentTime());
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -180,6 +180,18 @@ export function Header() {
                 </button>
                 <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors">
                   <Settings className="w-4 h-4 text-gray-400" /> Settings
+                </button>
+                <button
+                  onClick={async () => {
+                    setDropdownOpen(false);
+                    if (confirm("Reset all data to default demo state? This will restore both local data and backend storage files.")) {
+                      await resetDemoData();
+                      alert("Demo data has been reset to default state.");
+                    }
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-brand-600 hover:bg-brand-50 transition-colors font-medium"
+                >
+                  <RotateCcw className="w-4 h-4 text-brand-500" /> Reset Demo Data
                 </button>
               </div>
 

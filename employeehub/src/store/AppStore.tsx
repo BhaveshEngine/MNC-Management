@@ -397,39 +397,44 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>(loadState);
 
   // Fetch initial data from backend
+  // Fetch initial data from backend
   useEffect(() => {
     api.getRecords()
       .then(records => {
-        setState(s => {
-          const mappedEmployees = records.map((r: any) => ({
-            id: r.id,
-            employeeId: r.employeeId,
-            firstName: r.name ? r.name.split(' ')[0] : '',
-            lastName: r.name && r.name.split(' ').length > 1 ? r.name.split(' ').slice(1).join(' ') : '',
-            email: `${r.name ? r.name.split(' ')[0].toLowerCase() : 'emp'}@employeehub.in`,
-            phone: r.contactNo || '',
-            dateOfBirth: '',
-            gender: '',
-            address: r.address || '',
-            city: '',
-            state: '',
-            department: r.department || '',
-            designation: 'Employee',
-            managerName: '',
-            joiningDate: '',
-            employmentType: 'Full-time',
-            workLocation: '',
-            salary: r.salary || 0,
-            status: 'Active'
-          }));
-          return { ...s, employees: mappedEmployees };
-        });
+        if (records && Array.isArray(records) && records.length > 0) {
+          setState(s => {
+            const mappedEmployees: StoreEmployee[] = records.map((r: any) => ({
+              id: r.id || r.employeeId,
+              employeeId: r.employeeId || r.id,
+              firstName: r.firstName || (r.name ? r.name.split(' ')[0] : 'Employee'),
+              lastName: r.lastName || (r.name && r.name.split(' ').length > 1 ? r.name.split(' ').slice(1).join(' ') : ''),
+              email: r.email || `${r.firstName ? r.firstName.toLowerCase() : 'emp'}@employeehub.in`,
+              phone: r.phone || r.contactNo || '',
+              dateOfBirth: r.dateOfBirth || '',
+              gender: r.gender || 'Other',
+              address: r.address || '',
+              city: r.city || '',
+              state: r.state || '',
+              department: r.department || '',
+              designation: r.designation || 'Employee',
+              managerName: r.managerName || '',
+              joiningDate: r.joiningDate || new Date().toISOString().split('T')[0],
+              employmentType: r.employmentType || 'Full-time',
+              workLocation: r.workLocation || 'HQ',
+              salary: Number(r.salary) || 0,
+              status: r.status || 'Active',
+              skills: r.skills || [],
+              education: r.education || ''
+            }));
+            return { ...s, employees: mappedEmployees };
+          });
+        }
       })
       .catch(err => console.error("Failed to fetch records from API", err));
 
     api.getAttendance()
       .then(attendance => {
-        // Attendance mapping could be added here if needed
+        // Attendance loaded
       })
       .catch(err => console.error("Failed to fetch attendance from API", err));
   }, []);
@@ -446,7 +451,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const addEmployee = useCallback(async (emp: Omit<StoreEmployee, 'id' | 'employeeId'>) => {
     let newEmp: StoreEmployee;
     setState(s => {
-      const empIds = s.employees.map(e => parseInt(e.employeeId.split('-')[1]) || 0);
+      const empIds = s.employees.map(e => parseInt((e.employeeId || '').split('-')[1]) || 0);
       const nextId = `EMP-${Math.max(1024, ...empIds) + 1}`;
       newEmp = {
         ...emp,
@@ -460,42 +465,66 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       };
     });
 
-    // Sync with backend API
+    // Sync full record with backend API
     try {
-      await api.addRecord({
-        employeeId: newEmp!.employeeId,
-        age: 30, // Default age
-        name: `${newEmp!.firstName} ${newEmp!.lastName}`,
-        department: newEmp!.department,
-        salary: newEmp!.salary,
-        contactNo: newEmp!.phone,
-        address: newEmp!.address
-      });
+      await api.addRecord(newEmp!);
     } catch (err) {
       console.error("Failed to sync new employee to backend:", err);
     }
   }, []);
 
-  const updateEmployee = useCallback((id: string, updates: Partial<StoreEmployee>) => {
-    setState(s => ({
-      ...s,
-      employees: s.employees.map(e => e.id === id ? { ...e, ...updates } : e)
-    }));
+  const updateEmployee = useCallback(async (id: string, updates: Partial<StoreEmployee>) => {
+    let updatedEmp: StoreEmployee | undefined;
+    setState(s => {
+      const updated = s.employees.map(e => {
+        if (e.id === id || e.employeeId === id) {
+          updatedEmp = { ...e, ...updates };
+          return updatedEmp;
+        }
+        return e;
+      });
+      return { ...s, employees: updated };
+    });
+
+    if (updatedEmp) {
+      try {
+        await api.addRecord(updatedEmp);
+      } catch (err) {
+        console.error("Failed to sync updated employee to backend:", err);
+      }
+    }
   }, []);
 
   const deleteEmployee = useCallback(async (id: string) => {
     let employeeIdToDelete: string | undefined;
+    let isProtected = false;
     
     setState(s => {
-      const emp = s.employees.find(e => e.id === id);
+      const emp = s.employees.find(e => e.id === id || e.employeeId === id);
       if (emp) {
-        employeeIdToDelete = emp.employeeId;
+        if (
+          emp.id === 'emp-1024' ||
+          emp.employeeId === 'EMP-1024' ||
+          `${emp.firstName} ${emp.lastName}`.trim().toLowerCase() === 'rahul sharma' ||
+          emp.email.toLowerCase() === 'rahul.sharma@employeehub.in' ||
+          emp.email.toLowerCase() === 'admin@employeehub.in' ||
+          emp.id === 'admin-1'
+        ) {
+          isProtected = true;
+          return s;
+        }
+        employeeIdToDelete = emp.employeeId || emp.id;
       }
       return {
         ...s,
-        employees: s.employees.filter(e => e.id !== id)
+        employees: s.employees.filter(e => e.id !== id && e.employeeId !== id)
       };
     });
+
+    if (isProtected) {
+      alert("Cannot delete the demo employee (Rahul Sharma) or administrator account.");
+      return;
+    }
 
     if (employeeIdToDelete) {
       try {
@@ -506,7 +535,12 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const resetDemoData = useCallback(() => {
+  const resetDemoData = useCallback(async () => {
+    try {
+      await api.resetDemoData();
+    } catch (err) {
+      console.error("Failed to reset demo data on backend:", err);
+    }
     setState(INITIAL_STATE);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_STATE));
   }, []);
